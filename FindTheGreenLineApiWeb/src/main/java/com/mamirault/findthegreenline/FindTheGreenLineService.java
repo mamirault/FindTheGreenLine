@@ -1,5 +1,6 @@
 package com.mamirault.findthegreenline;
 
+import java.util.concurrent.TimeUnit;
 import com.mamirault.findthegreenline.configuration.FindTheGreenLineConfiguration;
 import com.mamirault.findthegreenline.resources.TestResource;
 import com.yammer.dropwizard.Service;
@@ -22,6 +23,10 @@ public class FindTheGreenLineService extends Service<FindTheGreenLineConfigurati
     final String defaultName = configuration.getDefaultName();
 
     environment.addResource(new TestResource(template, defaultName));
+  }
+  
+  private void initialize(){
+    long currentTimeInSeconds = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
   }
 
 }
