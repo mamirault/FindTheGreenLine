@@ -19,7 +19,7 @@ public class StopRSH implements ResultSetHandler<List<Stop>> {
     List<Stop> stops = Lists.newArrayList();
 
     while (rs.next()) {
-      Optional<Station> maybeStation = Station.getStationFromName(rs.getString(StopDAO.NAME_COLUMN_TITLE));
+      Optional<Station> maybeStation = Station.getStationFromName(rs.getString(StopDAO.NAME_COLUMN_TITLE) + " Station");
 
       if (maybeStation.isPresent()) {
         Direction direction = Direction.valueOf(rs.getString(StopDAO.DIRECTION_COLUMN_TITLE));

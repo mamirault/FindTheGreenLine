@@ -13,18 +13,22 @@ import com.mamirault.findthegreenline.core.Stop;
 import com.mamirault.findthegreenline.jdbc.DataSourceCreator;
 
 public class StopDAO {
-  public static final String UPDATE_SQL = "UPDATE STOPS SET name=? direction=? time=? timeReadable=? where name=? direction=? time=?;";
-  public static final String INSERT_SQL = "INSERT INTO STOPS VALUES(?, ?, ?, ?);";
-  public static final String SELECT_ALL_SQL = "SELECT * FROM Stops where name=? direction=? time=? limit ?, ?;";
+  private static final String UPDATE_SQL = "UPDATE STOPS SET name=? direction=? time=? timeReadable=? where name=? direction=? time=?;";
+  private static final String INSERT_SQL = "INSERT INTO STOPS VALUES(?, ?, ?, ?);";
+  private static final String SELECT_ALL_SQL = "SELECT name, direction, time FROM Stops limit ?, ?;";
+  private static final String SELECT_ALL_WHERE_SQL = "SELECT name, direction, time FROM Stops where name like ? and direction like ? limit ?, ?;";
+  private static final String SELECT_ALL_WITHIN_TIME_SQL = "SELECT name, direction, time FROM Stops where name like ? and direction like ? and time>=? and time<=? limit ?, ?;";
 
   public static String DIRECTION_COLUMN_TITLE = "direction";
   public static String NAME_COLUMN_TITLE = "name";
   public static String TIME_COLUMN_TITLE = "time";
 
   private final QueryRunner queryRunner;
+  private final ResultSetHandler<List<Stop>> stopRSH;
 
   public StopDAO() {
     queryRunner = new QueryRunner(DataSourceCreator.createDataSource());
+    stopRSH = new StopRSH();
   }
 
   public int update(Stop originalStop, Stop updatedStop) {
@@ -51,8 +55,18 @@ public class StopDAO {
 
     return 0;
   }
+  
+  public List<Stop> getAllStops(String name, String direction, long offset, long count){
+    return query(SELECT_ALL_WHERE_SQL, stopRSH, Lists.<Object> newArrayList(name, direction, offset, count));
+  }
+
+  public List<Stop> getStopsWithinTimeframe(String name, String direction, long timeframe, long offset, long count){
+    long time = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+    return query(SELECT_ALL_WITHIN_TIME_SQL, stopRSH, Lists.<Object> newArrayList(name, direction, time - 60, time + timeframe, offset, count));
+  }
 
   private <T> T query(String sqlQuery, ResultSetHandler<T> resultHandler, List<Object> queryParameters) {
+    System.out.println(sqlQuery + queryParameters);
     try {
       return queryRunner.query(sqlQuery, resultHandler, queryParameters.toArray());
     } catch (SQLException e) {

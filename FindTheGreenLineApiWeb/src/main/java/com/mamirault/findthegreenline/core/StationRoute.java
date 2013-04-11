@@ -11,24 +11,4 @@ public class StationRoute {
       Station.BACK_OF_THE_HILL, Station.HEATH_ST);
   public static final List<Station> E_LECHMERE_TO_HEATH = Lists.newArrayList(Station.LECHMERE, Station.HEATH_ST);
   public static final List<Station> E_HEATH_TO_LECHMERE = Lists.newArrayList(Station.HEATH_ST, Station.LECHMERE);
-
-  public static Optional<Station> getStationFromAddress(String address) {
-    for (Station station : E) {
-      if (station.getAddress().equalsIgnoreCase(address)) {
-        return Optional.of(station);
-      }
-    }
-
-    return Optional.<Station> absent();
-  }
-
-  public static Optional<Station> getStationFromName(String name) {
-    for (Station station : E) {
-      if (station.getName().equalsIgnoreCase(name.substring(0, name.indexOf("Station")).trim())) {
-        return Optional.of(station);
-      }
-    }
-
-    return Optional.<Station> absent();
-  }
 }

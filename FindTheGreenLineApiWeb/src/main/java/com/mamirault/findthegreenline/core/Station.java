@@ -87,14 +87,14 @@ public enum Station {
   private final String name;
   private final double latitude;
   private final double longitude;
-  
+
   Station(final String address, final String name, final double latitude, final double longitude) {
     this.address = address;
     this.name = name;
     this.latitude = latitude;
     this.longitude = longitude;
   }
-  
+
   public String getAddress() {
     return address;
   }
@@ -110,24 +110,24 @@ public enum Station {
   public double getLongitude() {
     return longitude;
   }
-  
-  public static Optional<Station> getStationFromAddress(String address){
-    for(Station station : Station.values()){
-      if(station.getAddress().equalsIgnoreCase(address)){
+
+  public static Optional<Station> getStationFromAddress(String address) {
+    for (Station station : Station.values()) {
+      if (station.getAddress().equalsIgnoreCase(address)) {
         return Optional.of(station);
       }
     }
-    
-    return Optional.<Station>absent();
+
+    return Optional.<Station> absent();
   }
 
-  public static Optional<Station> getStationFromName(String name){
-    for(Station station : Station.values()){
-      if(station.getName().equalsIgnoreCase(name.substring(0, name.indexOf("Station")).trim())){
+  public static Optional<Station> getStationFromName(String name) {
+    for (Station station : Station.values()) {
+      if (station.getName().equalsIgnoreCase(name.substring(0, name.indexOf("Station")).trim())) {
         return Optional.of(station);
       }
     }
-    
-    return Optional.<Station>absent();
+
+    return Optional.<Station> absent();
   }
 }
