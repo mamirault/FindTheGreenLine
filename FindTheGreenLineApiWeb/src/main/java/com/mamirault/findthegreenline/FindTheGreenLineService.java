@@ -28,5 +28,4 @@ public class FindTheGreenLineService extends Service<FindTheGreenLineConfigurati
   private void initialize(){
     long currentTimeInSeconds = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
   }
-
 }
