@@ -57,7 +57,7 @@ public class StopResource {
       @DefaultValue("%") @QueryParam("direction") String direction, @DefaultValue(TIMEFRAME_DEFAULT) @QueryParam("timeframe") long timeframe) {
     Preconditions.checkArgument(count >= 0, "Count cannot be negative.");
     Preconditions.checkArgument(offset >= 0, "Offset cannot be negative.");
-    Preconditions.checkArgument(direction.equals("%") || direction.equalsIgnoreCase("East") || direction.equalsIgnoreCase("West"));
+    Preconditions.checkArgument(direction.equals("%") || direction.equalsIgnoreCase("East") || direction.equalsIgnoreCase("West"), "Direction must be either 'East' or 'West.'");
     Preconditions.checkArgument(timeframe >= 0, "Timeframe cannot be negative");
 
     Optional<Station> maybeStation = Station.getStationFromName(name + " Station");
