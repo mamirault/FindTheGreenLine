@@ -1,6 +1,8 @@
 package com.mamirault.findthegreenline.resources;
 
+import java.text.ParseException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.ws.rs.DefaultValue;
@@ -21,7 +23,7 @@ import com.yammer.metrics.annotation.Timed;
 @Path("/stops")
 @Produces(MediaType.APPLICATION_JSON)
 public class StopResource {
-  private final static String TIMEFRAME_DEFAULT = "3600";
+  public static final String TIMEFRAME_DEFAULT = "3600000";
 
   private final String template;
   private final String defaultName;
@@ -54,7 +56,7 @@ public class StopResource {
   @Timed
   @Path("/timeframe")
   public List<Stop> getStopsWithinTimeframe(@DefaultValue("0") @QueryParam("offset") long offset, @DefaultValue("2500") @QueryParam("count") long count, @DefaultValue("%") @QueryParam("name") String name,
-      @DefaultValue("%") @QueryParam("direction") String direction, @DefaultValue(TIMEFRAME_DEFAULT) @QueryParam("timeframe") long timeframe) {
+      @DefaultValue("%") @QueryParam("direction") String direction, @DefaultValue(TIMEFRAME_DEFAULT) @QueryParam("timeframe") long timeframe) throws ParseException {
     Preconditions.checkArgument(count >= 0, "Count cannot be negative.");
     Preconditions.checkArgument(offset >= 0, "Offset cannot be negative.");
     Preconditions.checkArgument(direction.equals("%") || direction.equalsIgnoreCase("East") || direction.equalsIgnoreCase("West"), "Direction must be either 'East' or 'West.'");

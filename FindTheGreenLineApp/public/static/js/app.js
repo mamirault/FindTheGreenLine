@@ -209,7 +209,7 @@
       Stops.__super__.constructor.apply(this, arguments);
     }
 
-    Stops.prototype.urlBase = "http://localhost:8080/stops/all";
+    Stops.prototype.urlBase = "http://localhost:8080/stops/timeframe";
 
     Stops.prototype.model = Stop;
 

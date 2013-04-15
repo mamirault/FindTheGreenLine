@@ -35,9 +35,9 @@ public class GMapScheduleManager {
   private long lastApiCall;
   private final long apiCallDelay = 2500;
   
-  public static final long RELATIVE_AM_500 = TimeUnit.HOURS.toMillis(5) + TimeUnit.DAYS.toMillis(2); 
-  public static final long RELATIVE_AM_830 = TimeUnit.HOURS.toMillis(8) + TimeUnit.MINUTES.toMillis(30) + TimeUnit.DAYS.toMillis(2);
-  public static final long RELATIVE_AM_1230_NEXT_DAY = TimeUnit.DAYS.toMillis(1) + TimeUnit.MINUTES.toMillis(30) + TimeUnit.DAYS.toMillis(2);
+  public static final long RELATIVE_AM_500 = TimeUnit.HOURS.toMillis(5) + TimeUnit.DAYS.toMillis(1); 
+  public static final long RELATIVE_AM_830 = TimeUnit.HOURS.toMillis(8) + TimeUnit.MINUTES.toMillis(30) + TimeUnit.DAYS.toMillis(1);
+  public static final long RELATIVE_AM_1230_NEXT_DAY = TimeUnit.DAYS.toMillis(1) + TimeUnit.MINUTES.toMillis(30) + TimeUnit.DAYS.toMillis(1);
   public static final long ONE_MINUTE = TimeUnit.MINUTES.toMillis(1);
   public static final long FIVE_MINUTES = TimeUnit.MINUTES.toMillis(5);
   public static final long TEN_MINUTES = TimeUnit.MINUTES.toMillis(10);
@@ -144,12 +144,12 @@ public class GMapScheduleManager {
   
   @Test
   public void getAllTimes() throws ParseException {
-    long time = TimeUtils.relativeToCurrent(RELATIVE_AM_500);
+    long time = TimeUtils.relativeToCurrent(RELATIVE_AM_500 + TimeUnit.HOURS.toMillis(10));
     while (time <= TimeUtils.relativeToCurrent(RELATIVE_AM_1230_NEXT_DAY + TimeUnit.MINUTES.toMillis(10))) {
       System.out.println(new Date(time));
-      Optional<Stop> maybeDepartureStop = getData(Station.HEATH_ST, Station.LECHMERE, TimeUnit.MILLISECONDS.toSeconds(time), true, false, true);
+      Optional<Stop> maybeDepartureStop = getData(Station.RIVERWAY, Station.NORTH, TimeUnit.MILLISECONDS.toSeconds(time), true, false, true);
       if (maybeDepartureStop.isPresent()) {
-        time = maybeDepartureStop.get().getTime() + ONE_MINUTE;
+        time = maybeDepartureStop.get().  getTime() + ONE_MINUTE;
       } else {
         time += FIVE_MINUTES;
       }

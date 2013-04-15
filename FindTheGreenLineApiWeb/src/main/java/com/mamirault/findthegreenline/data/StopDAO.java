@@ -8,10 +8,13 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
+import org.junit.Test;
 
 import com.google.common.collect.Lists;
+import com.mamirault.findthegreenline.core.Direction;
 import com.mamirault.findthegreenline.core.Stop;
 import com.mamirault.findthegreenline.jdbc.DataSourceCreator;
+import com.mamirault.findthegreenline.resources.StopResource;
 import com.mamirault.findthegreenline.utils.TimeUtils;
 
 public class StopDAO {
@@ -65,13 +68,12 @@ public class StopDAO {
   }
   
   public List<Stop> getAllStops(String name, String direction, long offset, long count){
-    System.out.println("getting all stops");
-    System.out.println(String.format(SELECT_ALL_WHERE_SQL, Lists.<Object> newArrayList(name, direction, offset, count).toArray()));
     return query(SELECT_ALL_WHERE_SQL, stopRSH, Lists.<Object> newArrayList(name, direction, offset, count));
   }
 
-  public List<Stop> getStopsWithinTimeframe(String name, String direction, long timeframe, long offset, long count){
-    long time = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+  public List<Stop> getStopsWithinTimeframe(String name, String direction, long timeframe, long offset, long count) throws ParseException{
+    long time = TimeUtils.getRelative(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(5));
+
     return query(SELECT_ALL_WITHIN_TIME_SQL, stopRSH, Lists.<Object> newArrayList(name, direction, time, time + timeframe, offset, count));
   }
 
@@ -85,5 +87,17 @@ public class StopDAO {
     }
 
     return null;
+  }
+  
+  @Test
+  public void testGetTimeFrame() throws ParseException{
+      String name = "Northeastern University";
+      Direction direction = Direction.West;
+      long timeframe = TimeUnit.HOURS.toMillis(1);
+      long offset = 0;
+      long count = 1234567;
+  
+      List<Stop> stops = getStopsWithinTimeframe(name, direction.toString(), timeframe, offset, count);
+      System.out.println(stops);
   }
 }

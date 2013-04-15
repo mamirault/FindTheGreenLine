@@ -4,7 +4,7 @@ Stop       = require '../models/stop'
 
 class Stops extends Collection
   #urlBase : "http://api.findthegreenline.com/stops/all"
-  urlBase : "http://localhost:8080/stops/all"
+  urlBase : "http://localhost:8080/stops/timeframe"
   model   : Stop
 
   fetch: (callback, args) =>
