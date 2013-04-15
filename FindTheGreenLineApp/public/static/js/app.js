@@ -209,7 +209,7 @@
       Stops.__super__.constructor.apply(this, arguments);
     }
 
-    Stops.prototype.urlBase = "http://localhost:8080/stops/all";
+    Stops.prototype.urlBase = "http://api.findthegreenline.com/stops/all";
 
     Stops.prototype.model = Stop;
 
