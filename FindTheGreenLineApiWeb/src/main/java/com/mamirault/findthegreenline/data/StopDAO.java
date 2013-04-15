@@ -17,9 +17,9 @@ import com.mamirault.findthegreenline.utils.TimeUtils;
 public class StopDAO {
   private static final String UPDATE_SQL = "UPDATE STOPS SET name=? direction=? time=? timeReadable=? where name=? direction=? time=?;";
   private static final String INSERT_SQL = "INSERT INTO STOPS VALUES(?, ?, ?, ?, ?);";
-  private static final String SELECT_ALL_SQL = "SELECT name, di4rection, time FROM Stops order by time asc limit ?, ?;";
-  private static final String SELECT_ALL_WHERE_SQL = "SELECT name, direction, time FROM Stops where name like ? and direction like ? order by time asc limit ?, ?;";
-  private static final String SELECT_ALL_WITHIN_TIME_SQL = "SELECT name, direction, time FROM Stops where name like ? and direction like ? and time>=? and time<=? order by time asc limit ?, ?;";
+  private static final String SELECT_ALL_SQL = "SELECT name, direction, time, weekPortion FROM Stops order by time asc limit ?, ?;";
+  private static final String SELECT_ALL_WHERE_SQL = "SELECT name, direction, time, weekPortion FROM Stops where name like ? and direction like ? order by time asc limit ?, ?;";
+  private static final String SELECT_ALL_WITHIN_TIME_SQL = "SELECT name, direction, time, weekPortion FROM Stops where name like ? and direction like ? and time>=? and time<=? order by time asc limit ?, ?;";
 
   public static String DIRECTION_COLUMN_TITLE = "direction";
   public static String NAME_COLUMN_TITLE = "name";
@@ -65,6 +65,8 @@ public class StopDAO {
   }
   
   public List<Stop> getAllStops(String name, String direction, long offset, long count){
+    System.out.println("getting all stops");
+    System.out.println(String.format(SELECT_ALL_WHERE_SQL, Lists.<Object> newArrayList(name, direction, offset, count).toArray()));
     return query(SELECT_ALL_WHERE_SQL, stopRSH, Lists.<Object> newArrayList(name, direction, offset, count));
   }
 
