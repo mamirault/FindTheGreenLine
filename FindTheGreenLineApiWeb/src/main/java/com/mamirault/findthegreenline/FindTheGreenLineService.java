@@ -30,6 +30,7 @@ public class FindTheGreenLineService extends Service<FindTheGreenLineConfigurati
     FilterBuilder filterBuilder = environment.addFilter(CrossOriginFilter.class, "/*");
     filterBuilder.setInitParam(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "http://localhost:3333");
     filterBuilder.setInitParam(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "http://ec2-50-19-184-2.compute-1.amazonaws.com:3333");
+    filterBuilder.setInitParam(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "ec2-50-19-184-2.compute-1.amazonaws.com:3333");
 
     environment.addResource(new StopResource(template, defaultName));
     environment.addResource(new StationResource(template, defaultName));
