@@ -1,22 +1,20 @@
+app        = require 'application'
 Collection = require './collection'
-app = require 'application'
+Stop       = require '../models/stop'
 
 class Stops extends Collection
-  urlBase : app.env.API_BASE + "//v1/stats"
+  urlBase : "http://localhost:8080/stops/all"
+  model   : Stop
 
-  fetch: (opts) =>
-    $.fancybox.showActivity()
-
+  fetch: (callback, args) =>
     $.ajax
-      url: "#{@urlBase}?#{app.env.ACCESS_TOKEN_PARAM}=#{app.portalAccessToken}"
+      url: @urlBase
       type: 'GET'
       dataType: 'json'
       success: (data, textStatus, jqHXR) => 
         @reset @parse data
-        $.fancybox.hideActivity()
-        opts.callback()
+        callback args
       error: (xhr, status, error) => 
-        app.helpers.errorDialog "Problem getting message info email stats from #{@urlBase}. Reason: #{error}."
-        $.fancybox.hideActivity()
+        app.helpers.errorDialog "Problem getting stop informationfrom #{@urlBase}. Reason: #{error}."
 
-module.exports = Messages
+module.exports = Stops

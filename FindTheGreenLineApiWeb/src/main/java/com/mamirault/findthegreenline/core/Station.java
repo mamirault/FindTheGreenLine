@@ -1,6 +1,7 @@
 package com.mamirault.findthegreenline.core;
 
 import com.google.common.base.Optional;
+import com.mamirault.findthegreenline.json.JsonGeneratorWrapper;
 
 public enum Station {
   
@@ -74,8 +75,8 @@ public enum Station {
   PRUDENTIAL("Prudential Station, The Shops at the Prudential Center, Boston, MA 02199, USA", "Prudential", 42.34553, -71.08193),
   SYMPHONY("Symphony Station, Northeastern University, Boston, MA 02115, USA", "Symphony", 42.34267000000001, -71.08507),
   NORTHEASTERN_UNIVERSITY("Northeastern University Station, Northeastern University, Boston, MA 02115, USA", "Northeastern University", 42.3404, -71.08881000000001),
-  MUSEUM_OF_FINE_ARTS("Museum of Fine Arts Station, Boston, MA 02115, USA", "Museum of Fine Arts", 342.33765, -71.09554),
-  LONGWOOD_MEDICAL_AREA("Longwood Medical Area Station, Boston, MA 02120, USA","Longwood Medical Area", 42.34106000000001, -71.11027),
+  MUSEUM_OF_FINE_ARTS("Museum of Fine Arts Station, Boston, MA 02115, USA", "Museum of Fine Arts", 42.33765, -71.09554),
+  LONGWOOD_MEDICAL_AREA("Longwood Medical Area Station, Boston, MA 02120, USA", "Longwood Medical Area", 42.336143, -71.100029),
   BRIGHAM_CIRCLE("Brigham Circle Station, Boston, MA 02120, USA", "Brigham Circle", 42.33430000000001, -71.10466000000001),
   FENWOOD_RD("Fenwood Rd. Station, Boston, MA 02115, USA", "Fenwood Rd.",  42.33371, -71.10573000000002),
   MISSION_PARK("Mission Park Station, Boston, MA 02115, USA", "Mission Park", 42.33320000000001, -71.10976000000001),
@@ -83,10 +84,10 @@ public enum Station {
   BACK_OF_THE_HILL("Back of the Hill Station, Boston, MA 02130, USA", "Back of the Hill", 42.33014, -71.11131),
   HEATH_ST("Heath St. Station, Boston, MA 02130, USA", "Heath St.", 42.32868000000001, -71.11056);
 
-  private final String address;
-  private final String name;
-  private final double latitude;
-  private final double longitude;
+  public final String address;
+  public final String name;
+  public final double latitude;
+  public final double longitude;
 
   Station(final String address, final String name, final double latitude, final double longitude) {
     this.address = address;
@@ -129,5 +130,27 @@ public enum Station {
     }
 
     return Optional.<Station> absent();
+  }
+  
+  @Override
+  public String toString() {
+    return toJson(new JsonGeneratorWrapper()).asString();
+  }
+  
+  public JsonGeneratorWrapper toJson(JsonGeneratorWrapper jg){
+    return jg.startObject()
+    .string("name", name)
+    .string("address", address)
+    .number("latitude", latitude)
+    .number("longitude", longitude)
+    .endObject();
+  }
+
+  public static JsonGeneratorWrapper getAllJson() {
+    JsonGeneratorWrapper jg = new JsonGeneratorWrapper().startArray();
+    for (Station station : Station.values()) {
+      station.toJson(jg);
+    }
+    return jg.endArray();
   }
 }

@@ -3,14 +3,12 @@ package com.mamirault.findthegreenline;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.management.RuntimeErrorException;
-
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -18,13 +16,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
-import com.mamirault.findthegreenline.core.Direction;
 import com.mamirault.findthegreenline.core.Headsign;
 import com.mamirault.findthegreenline.core.Line;
 import com.mamirault.findthegreenline.core.Station;
-import com.mamirault.findthegreenline.core.StationRoute;
 import com.mamirault.findthegreenline.core.Stop;
+import com.mamirault.findthegreenline.core.WeekPortion;
 import com.mamirault.findthegreenline.data.StopDAO;
+import com.mamirault.findthegreenline.utils.TimeUtils;
 
 public class GMapScheduleManager {
   private final static String ARRIVAL = "arrival";
@@ -33,20 +31,18 @@ public class GMapScheduleManager {
   private final static String TIME = "time";
   private final static String HEADSIGN = "headsign";
 
-  private final DefaultHttpClient httpClient;
   private final StopDAO stopDAO;
-  //private long departureTime = 1365499800;
-  private long lastApiCallMillis;
-  private final long apiCallDelayMillis = 2500; 
+  private long lastApiCall;
+  private final long apiCallDelay = 2500;
   
-  public static long AM_500 = 1365670800;
-  public static long AM_830 = 1365683100;
-  public static long AM_1230 = 1365741000;
-  public static long ONE_MINUTE = 60;
-  public static long FIVE_MINUTES = 300;
+  public static final long RELATIVE_AM_500 = TimeUnit.HOURS.toMillis(5) + TimeUnit.DAYS.toMillis(2); 
+  public static final long RELATIVE_AM_830 = TimeUnit.HOURS.toMillis(8) + TimeUnit.MINUTES.toMillis(30) + TimeUnit.DAYS.toMillis(2);
+  public static final long RELATIVE_AM_1230_NEXT_DAY = TimeUnit.DAYS.toMillis(1) + TimeUnit.MINUTES.toMillis(30) + TimeUnit.DAYS.toMillis(2);
+  public static final long ONE_MINUTE = TimeUnit.MINUTES.toMillis(1);
+  public static final long FIVE_MINUTES = TimeUnit.MINUTES.toMillis(5);
+  public static final long TEN_MINUTES = TimeUnit.MINUTES.toMillis(10);
 
   public GMapScheduleManager() {
-    this.httpClient = new DefaultHttpClient();
     this.stopDAO = new StopDAO();
   }
 
@@ -64,11 +60,6 @@ public class GMapScheduleManager {
       throw new IllegalStateException("Line must be either: B, C, D, or E.");
     }
 
-  }
-
-  @Test
-  public void getELineDataTest() {
-    getLineData(StationRoute.E, true, true, AM_500);
   }
 
   public void getLineData(List<Station> stationRoute, boolean saveDepartureInfo, boolean saveArrivalInfo, long departureTime) {
@@ -91,9 +82,9 @@ public class GMapScheduleManager {
       String url = String.format("http://maps.googleapis.com/maps/api/directions/json?alternatives=true&sensor=false&mode=transit&departure_time=%d&origin=%s&destination=%s", departureTime, originStation.getAddress(), destinationStation.getAddress(), "UTF-8")
           .replace(" ", "+");
       System.out.println(url);
-      if(lastApiCallMillis + apiCallDelayMillis >= System.currentTimeMillis()){
+      if(lastApiCall + apiCallDelay >= System.currentTimeMillis()){
         try {
-          Thread.sleep((lastApiCallMillis + apiCallDelayMillis) - System.currentTimeMillis());
+          Thread.sleep((lastApiCall + apiCallDelay) - System.currentTimeMillis());
         } catch (InterruptedException e) {
           // TODO Auto-generated catch block
           e.printStackTrace();
@@ -111,7 +102,7 @@ public class GMapScheduleManager {
       // TODO Auto-generated catch block
       e.printStackTrace();
     } finally {
-      lastApiCallMillis = System.currentTimeMillis();
+      lastApiCall = System.currentTimeMillis();
     }
 
     if (actualObj != null) {
@@ -152,11 +143,11 @@ public class GMapScheduleManager {
   }
   
   @Test
-  public void getAllTimes() {
-    long time = AM_500;
-    while (time <= AM_1230 + 600) {
-      System.out.println(new Date(TimeUnit.SECONDS.toMillis(time)));
-      Optional<Stop> maybeDepartureStop = getData(Station.PARK_ST, Station.BRIGHAM_CIRCLE, time, true, false, true);
+  public void getAllTimes() throws ParseException {
+    long time = TimeUtils.relativeToCurrent(RELATIVE_AM_500);
+    while (time <= TimeUtils.relativeToCurrent(RELATIVE_AM_1230_NEXT_DAY + TimeUnit.MINUTES.toMillis(10))) {
+      System.out.println(new Date(time));
+      Optional<Stop> maybeDepartureStop = getData(Station.HEATH_ST, Station.LECHMERE, TimeUnit.MILLISECONDS.toSeconds(time), true, false, true);
       if (maybeDepartureStop.isPresent()) {
         time = maybeDepartureStop.get().getTime() + ONE_MINUTE;
       } else {
@@ -191,10 +182,10 @@ public class GMapScheduleManager {
     if (maybeStation.isPresent()) {
       JsonNode timeNode = transitDetails.get(stopType + "_" + TIME);
 
-      long time = timeNode.get("value").asLong();
+      long time = TimeUnit.SECONDS.toMillis(timeNode.get("value").asLong());
       Headsign headsign = Headsign.parseHeadsign(transitDetails.get(HEADSIGN).asText());
 
-      maybeStop = Optional.fromNullable(new Stop(maybeStation.get(), headsign.getDirection(), time));
+      maybeStop = Optional.fromNullable(new Stop(maybeStation.get(), headsign.getDirection(), time, WeekPortion.Weekday));
     }
 
     return maybeStop;
@@ -226,7 +217,7 @@ public class GMapScheduleManager {
 
       JsonNode step = steps.get(0).get(0);
       JsonNode html = step.get("html_instructions");
-      return html.asText().contains("Light rail towards E - Heath Street");
+      return html.asText().contains("Light rail towards Lechmere");
     } catch (Exception e) {
       e.printStackTrace();
     }

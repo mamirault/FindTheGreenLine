@@ -11,6 +11,7 @@ import com.google.common.collect.Lists;
 import com.mamirault.findthegreenline.core.Direction;
 import com.mamirault.findthegreenline.core.Station;
 import com.mamirault.findthegreenline.core.Stop;
+import com.mamirault.findthegreenline.core.WeekPortion;
 
 public class StopRSH implements ResultSetHandler<List<Stop>> {
 
@@ -23,9 +24,10 @@ public class StopRSH implements ResultSetHandler<List<Stop>> {
 
       if (maybeStation.isPresent()) {
         Direction direction = Direction.valueOf(rs.getString(StopDAO.DIRECTION_COLUMN_TITLE));
+        WeekPortion weekPortion = WeekPortion.valueOf(rs.getString(StopDAO.WEEK_PORTION_COLUMN_TITLE));
         long time = rs.getLong(StopDAO.TIME_COLUMN_TITLE);
 
-        stops.add(new Stop(maybeStation.get(), direction, time));
+        stops.add(new Stop(maybeStation.get(),direction, time, weekPortion));
       } else {
         System.out.println("Could not generate a station from the name: " + rs.getString(StopDAO.NAME_COLUMN_TITLE));
       }

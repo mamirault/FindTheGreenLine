@@ -134,16 +134,71 @@
   }
 }));
 (this.require.define({
-  "collections/stops": function(exports, require, module) {
+  "collections/stations": function(exports, require, module) {
     (function() {
-  var Collection, Stops, app,
+  var Collection, Station, Stations, app,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
+  app = require('application');
+
   Collection = require('./collection');
 
+  Station = require('../models/station');
+
+  Stations = (function(_super) {
+
+    __extends(Stations, _super);
+
+    function Stations() {
+      this.fetch = __bind(this.fetch, this);
+      Stations.__super__.constructor.apply(this, arguments);
+    }
+
+    Stations.prototype.urlBase = "http://localhost:8080/stations/all";
+
+    Stations.prototype.model = Station;
+
+    Stations.prototype.fetch = function(callback) {
+      var _this = this;
+      return $.ajax({
+        url: this.urlBase,
+        type: 'GET',
+        dataType: 'json',
+        success: function(data, textStatus, jqHXR) {
+          _this.reset(_this.parse(data));
+          return callback();
+        },
+        error: function(xhr, status, error) {
+          return app.helpers.errorDialog("Problem getting stop informationfrom " + _this.urlBase + ". Reason: " + error + ".");
+        }
+      });
+    };
+
+    return Stations;
+
+  })(Collection);
+
+  module.exports = Stations;
+
+}).call(this);
+
+  }
+}));
+(this.require.define({
+  "collections/stops": function(exports, require, module) {
+    (function() {
+  var Collection, Stop, Stops, app,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
   app = require('application');
+
+  Collection = require('./collection');
+
+  Stop = require('../models/stop');
 
   Stops = (function(_super) {
 
@@ -154,23 +209,22 @@
       Stops.__super__.constructor.apply(this, arguments);
     }
 
-    Stops.prototype.urlBase = app.env.API_BASE + "//v1/stats";
+    Stops.prototype.urlBase = "http://localhost:8080/stops/all";
 
-    Stops.prototype.fetch = function(opts) {
+    Stops.prototype.model = Stop;
+
+    Stops.prototype.fetch = function(callback, args) {
       var _this = this;
-      $.fancybox.showActivity();
       return $.ajax({
-        url: "" + this.urlBase + "?" + app.env.ACCESS_TOKEN_PARAM + "=" + app.portalAccessToken,
+        url: this.urlBase,
         type: 'GET',
         dataType: 'json',
         success: function(data, textStatus, jqHXR) {
           _this.reset(_this.parse(data));
-          $.fancybox.hideActivity();
-          return opts.callback();
+          return callback(args);
         },
         error: function(xhr, status, error) {
-          app.helpers.errorDialog("Problem getting message info email stats from " + _this.urlBase + ". Reason: " + error + ".");
-          return $.fancybox.hideActivity();
+          return app.helpers.errorDialog("Problem getting stop informationfrom " + _this.urlBase + ". Reason: " + error + ".");
         }
       });
     };
@@ -179,7 +233,7 @@
 
   })(Collection);
 
-  module.exports = Messages;
+  module.exports = Stops;
 
 }).call(this);
 
@@ -238,7 +292,8 @@
 (this.require.define({
   "lib/helpers": function(exports, require, module) {
     (function() {
-  var app, helpers;
+  var app, helpers,
+    _this = this;
 
   app = require('../application');
 
@@ -260,10 +315,41 @@
           "line-height": newFontSize / 1.2 + "px"
         });
       });
+    },
+    convertToTimeString: function(date) {
+      var AmPm, hours, minutes;
+      minutes = date.getMinutes();
+      if (minutes.toString().length === 1) minutes = "0" + minutes;
+      hours = date.getHours();
+      if (hours > 12) {
+        hours -= 12;
+        AmPm = "pm";
+      } else {
+        AmPm = "am";
+        if (hours === 0) hours = 12;
+      }
+      return "" + hours + ":" + minutes + AmPm;
     }
   };
 
   module.exports = helpers;
+
+}).call(this);
+
+  }
+}));
+(this.require.define({
+  "lib/icons": function(exports, require, module) {
+    (function() {
+  var icons;
+
+  icons = {
+    person: "./person.png",
+    train: "./train.png",
+    station: "./station.png"
+  };
+
+  module.exports = icons;
 
 }).call(this);
 
@@ -386,6 +472,43 @@
   }
 }));
 (this.require.define({
+  "models/station": function(exports, require, module) {
+    (function() {
+  var Model, Station,
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+  Model = require('./model');
+
+  Station = (function(_super) {
+
+    __extends(Station, _super);
+
+    function Station() {
+      Station.__super__.constructor.apply(this, arguments);
+    }
+
+    Station.prototype.isStation = true;
+
+    Station.prototype.name = "";
+
+    Station.prototype.address = "";
+
+    Station.prototype.latitude = null;
+
+    Station.prototype.longitude = null;
+
+    return Station;
+
+  })(Model);
+
+  module.exports = Station;
+
+}).call(this);
+
+  }
+}));
+(this.require.define({
   "models/stop": function(exports, require, module) {
     (function() {
   var Model, Stop,
@@ -398,20 +521,17 @@
 
     __extends(Stop, _super);
 
-    Stop.prototype.defaults = {
-      time: 0,
-      isStop: true,
-      name: "",
-      direction: ""
-    };
-
-    Stop.prototype.initialize = function() {
-      return console.log("I've been initialized!");
-    };
-
     function Stop() {
-      console.log("I've been constructed!");
+      Stop.__super__.constructor.apply(this, arguments);
     }
+
+    Stop.prototype.time = 0;
+
+    Stop.prototype.isStop = true;
+
+    Stop.prototype.name = "";
+
+    Stop.prototype.direction = "";
 
     return Stop;
 
@@ -516,7 +636,7 @@
 (this.require.define({
   "views/mapView": function(exports, require, module) {
     (function() {
-  var Location, MapView, View, app, helpers, template,
+  var Icons, Location, MapView, Stations, Stops, View, app, helpers, template,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
@@ -531,11 +651,21 @@
 
   Location = require('../models/location');
 
+  Stops = require('../collections/stops');
+
+  Stations = require('../collections/stations');
+
+  Icons = require('../lib/icons');
+
   MapView = (function(_super) {
 
     __extends(MapView, _super);
 
     function MapView() {
+      this.createMarker = __bind(this.createMarker, this);
+      this.renderStations = __bind(this.renderStations, this);
+      this.getContentFromName = __bind(this.getContentFromName, this);
+      this.createInfoWindowContent = __bind(this.createInfoWindowContent, this);
       this.locationCallback = __bind(this.locationCallback, this);
       this.afterRender = __bind(this.afterRender, this);
       this.initialize = __bind(this.initialize, this);
@@ -550,7 +680,15 @@
 
     MapView.prototype.location = null;
 
-    MapView.prototype.stops = null;
+    MapView.prototype.stops = new Stops();
+
+    MapView.prototype.stations = new Stations();
+
+    MapView.prototype.infoWindow = new google.maps.InfoWindow();
+
+    MapView.prototype.markers = {};
+
+    MapView.prototype.infoWindowContent = {};
 
     MapView.prototype.initialize = function() {
       this.location = new Location(this.locationCallback, false);
@@ -559,14 +697,16 @@
         zoom: 15,
         mapTypeId: google.maps.MapTypeId.ROADMAP
       };
-      return this.stops = new Stops();
+      this.stops.fetch(this.createInfoWindowContent, true);
+      return this.stations.fetch(this.render);
     };
 
     MapView.prototype.afterRender = function() {
       this.map = new google.maps.Map(document.getElementById(this.mapId), this.mapOptions);
       this.transitLayer = new google.maps.TransitLayer();
       this.transitLayer.setMap(this.map);
-      if (!this.location.isDefault) return this.marker.setMap(this.map);
+      if (!this.location.isDefault) this.marker.setMap(this.map);
+      return this.renderStations();
     };
 
     MapView.prototype.locationCallback = function(location) {
@@ -574,9 +714,73 @@
       this.mapOptions.center = new google.maps.LatLng(location.coords.latitude, location.coords.longitude);
       this.marker = new google.maps.Marker({
         position: this.mapOptions.center,
-        title: "You"
+        title: "You",
+        icon: Icons.person
       });
       return this.afterRender();
+    };
+
+    MapView.prototype.createInfoWindowContent = function(render) {
+      var info, stop, _i, _len, _ref;
+      this.infoWindowContent = {};
+      _ref = this.stops.models;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        stop = _ref[_i];
+        info = {
+          direction: stop.get("direction"),
+          time: new Date(stop.get("time"))
+        };
+        if (!this.infoWindowContent[stop.get("name")]) {
+          this.infoWindowContent[stop.get("name")] = [];
+        }
+        this.infoWindowContent[stop.get("name")].push(info);
+      }
+      if (render) return this.afterRender();
+    };
+
+    MapView.prototype.getContentFromName = function(name) {
+      var content, info, infos, time, timeReadable, _i, _len;
+      infos = this.infoWindowContent[name];
+      if (!infos) {
+        this.infoWindowContent[name] = [];
+        infos = [];
+      }
+      content = "<strong>" + name + "</strong>";
+      for (_i = 0, _len = infos.length; _i < _len; _i++) {
+        info = infos[_i];
+        time = new Date(info.time);
+        timeReadable = "" + (helpers.convertToTimeString(time));
+        content += "<div>Direction: " + info.direction + "<br>Arrival Time: " + timeReadable + "</div>";
+      }
+      return content;
+    };
+
+    MapView.prototype.renderStations = function() {
+      var station, _i, _len, _ref, _results;
+      _ref = this.stations.models;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        station = _ref[_i];
+        _results.push(this.createMarker(station));
+      }
+      return _results;
+    };
+
+    MapView.prototype.createMarker = function(station) {
+      var content, name,
+        _this = this;
+      name = station.get("name");
+      content = this.getContentFromName(name);
+      this.markers[name] = new google.maps.Marker({
+        position: new google.maps.LatLng(station.get("latitude"), station.get("longitude")),
+        title: name,
+        icon: Icons.station
+      });
+      this.markers[name].setMap(this.map);
+      return google.maps.event.addListener(this.markers[name], 'click', function() {
+        _this.infoWindow.setContent(content);
+        return _this.infoWindow.open(_this.map, _this.markers[name]);
+      });
     };
 
     return MapView;

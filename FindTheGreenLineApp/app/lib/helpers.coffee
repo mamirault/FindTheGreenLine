@@ -15,4 +15,19 @@ helpers =
         "font-size" : newFontSize
         "line-height" : newFontSize/1.2 + "px"
 
+  convertToTimeString: (date) =>
+    minutes = date.getMinutes()
+    if minutes.toString().length == 1
+      minutes = "0#{minutes}"
+    hours = date.getHours()
+    if hours > 12
+      hours -= 12
+      AmPm = "pm"
+    else
+      AmPm = "am"
+      if hours == 0
+        hours = 12
+
+    "#{hours}:#{minutes}#{AmPm}"
+
 module.exports = helpers
