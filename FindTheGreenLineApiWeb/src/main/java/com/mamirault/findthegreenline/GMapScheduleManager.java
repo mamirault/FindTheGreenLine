@@ -147,7 +147,7 @@ public class GMapScheduleManager {
     long time = TimeUtils.relativeToCurrent(RELATIVE_AM_500);
     while (time <= TimeUtils.relativeToCurrent(RELATIVE_AM_1230_NEXT_DAY + TimeUnit.MINUTES.toMillis(10))) {
       System.out.println(new Date(time));
-      Optional<Stop> maybeDepartureStop = getData(Station.FENWOOD_RD, Station.GOVERNMENT_CENTER, TimeUnit.MILLISECONDS.toSeconds(time), true, false, true);
+      Optional<Stop> maybeDepartureStop = getData(Station.LONGWOOD_MEDICAL_AREA, Station.PARK_ST, TimeUnit.MILLISECONDS.toSeconds(time), true, false, true);
       if (maybeDepartureStop.isPresent()) {
         time = maybeDepartureStop.get().  getTime() + ONE_MINUTE;
       } else {
