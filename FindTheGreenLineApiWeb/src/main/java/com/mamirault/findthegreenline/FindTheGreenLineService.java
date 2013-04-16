@@ -10,9 +10,7 @@ import com.yammer.dropwizard.config.Bootstrap;
 import com.yammer.dropwizard.config.Environment;
 import com.yammer.dropwizard.config.FilterBuilder;
 
-public class FindTheGreenLineService extends Service<FindTheGreenLineConfiguration> {
-  public static long MIDNIGHT;
-  
+public class FindTheGreenLineService extends Service<FindTheGreenLineConfiguration> {  
   public static void main(String[] args) throws Exception {
     new FindTheGreenLineService().run(args);
   }
@@ -28,7 +26,7 @@ public class FindTheGreenLineService extends Service<FindTheGreenLineConfigurati
     final String defaultName = configuration.getDefaultName();
     
     FilterBuilder filterBuilder = environment.addFilter(CrossOriginFilter.class, "/*");
-    filterBuilder.setInitParam(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "http://ec2-50-19-184-2.compute-1.amazonaws.com:3333");//http://localhost:3333");
+    filterBuilder.setInitParam(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "*");
     //filterBuilder.setInitParam(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "http://ec2-50-19-184-2.compute-1.amazonaws.com:3333");
     //filterBuilder.setInitParam(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "ec2-50-19-184-2.compute-1.amazonaws.com:3333");
     //filterBuilder.setInitParam(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "http://findthegreenline.com");
