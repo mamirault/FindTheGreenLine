@@ -86,17 +86,19 @@
 
   application = {
     initialize: function(env, onSuccess) {
-      var AppRouter, CheckInView, HeaderView, HomeView, MapView, ThanksView;
+      var AppRouter, CheckInMapView, CheckInView, HeaderView, HomeView, MapView, ThanksView;
       this.env = env;
       HomeView = require('/views/homeView');
       MapView = require('/views/mapView');
-      HeaderView = require('/views/headerView');
+      CheckInMapView = require('/views/checkInMapView');
       CheckInView = require('/views/checkInView');
+      HeaderView = require('/views/headerView');
       ThanksView = require('/views/thanksView');
       this.views = {
+        headerView: new HeaderView(),
         homeView: new HomeView(),
         mapView: new MapView(),
-        headerView: new HeaderView(),
+        checkInMapView: new CheckInMapView(),
         checkInView: new CheckInView(),
         thanksView: new ThanksView()
       };
@@ -112,6 +114,20 @@
       for (viewName in app.views) {
         view = app.views[viewName];
         if (view.isMap || view.isHeader) {
+          view.render();
+          _results.push(view.show());
+        } else {
+          _results.push(view.hide());
+        }
+      }
+      return _results;
+    },
+    showCheckInMapView: function() {
+      var view, viewName, _results;
+      _results = [];
+      for (viewName in app.views) {
+        view = app.views[viewName];
+        if (view.isCheckInMap || view.isHeader) {
           view.render();
           _results.push(view.show());
         } else {
@@ -178,7 +194,7 @@
 (this.require.define({
   "collections/checkIns": function(exports, require, module) {
     (function() {
-  var CheckIn, Collection, Stations, app,
+  var CheckIn, CheckIns, Collection, app,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
@@ -187,22 +203,22 @@
 
   Collection = require('./collection');
 
-  CheckIn = require('../models/checkin');
+  CheckIn = require('../models/checkIn');
 
-  Stations = (function(_super) {
+  CheckIns = (function(_super) {
 
-    __extends(Stations, _super);
+    __extends(CheckIns, _super);
 
-    function Stations() {
+    function CheckIns() {
       this.fetch = __bind(this.fetch, this);
-      Stations.__super__.constructor.apply(this, arguments);
+      CheckIns.__super__.constructor.apply(this, arguments);
     }
 
-    Stations.prototype.urlBase = "" + app.env.API_BASE + "/checkin/all";
+    CheckIns.prototype.urlBase = "" + app.env.API_BASE + "/checkin/all";
 
-    Stations.prototype.model = CheckIn;
+    CheckIns.prototype.model = CheckIn;
 
-    Stations.prototype.fetch = function(callback) {
+    CheckIns.prototype.fetch = function(callback) {
       var _this = this;
       return $.ajax({
         url: this.urlBase,
@@ -218,11 +234,11 @@
       });
     };
 
-    return Stations;
+    return CheckIns;
 
   })(Collection);
 
-  module.exports = Stations;
+  module.exports = CheckIns;
 
 }).call(this);
 
@@ -516,6 +532,7 @@
     AppRouter.prototype.routes = {
       "/thanks": "thanks",
       "/map": "map",
+      "/checkinmap": "checkInMap",
       "/checkin": "checkIn",
       "/checkin/:line/:station": "checkInStation",
       "/home": "home",
@@ -530,6 +547,11 @@
     AppRouter.prototype.map = function() {
       app.showMapView();
       return app.views.mapView.render();
+    };
+
+    AppRouter.prototype.checkInMap = function() {
+      app.showCheckInMapView();
+      return app.views.CheckInMapView.render();
     };
 
     AppRouter.prototype.checkIn = function() {
@@ -570,6 +592,10 @@
 
     __extends(CheckIn, _super);
 
+    function CheckIn() {
+      CheckIn.__super__.constructor.apply(this, arguments);
+    }
+
     CheckIn.prototype.time = 0;
 
     CheckIn.prototype.isStop = true;
@@ -577,10 +603,6 @@
     CheckIn.prototype.name = "";
 
     CheckIn.prototype.direction = "";
-
-    function CheckIn() {
-      console.log("I've been constructed because I'm a model");
-    }
 
     return CheckIn;
 
@@ -738,6 +760,170 @@
   }
 }));
 (this.require.define({
+  "views/checkInMapView": function(exports, require, module) {
+    (function() {
+  var CheckInMapView, CheckIns, Icons, Location, Stations, View, app, helpers, template,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+  View = require('./view');
+
+  app = require('../application');
+
+  template = require('./templates/checkInMapTemplate');
+
+  helpers = require('../lib/helpers');
+
+  Location = require('../models/location');
+
+  Stations = require('../collections/stations');
+
+  CheckIns = require('../collections/checkIns');
+
+  Icons = require('../lib/icons');
+
+  CheckInMapView = (function(_super) {
+
+    __extends(CheckInMapView, _super);
+
+    function CheckInMapView() {
+      this.toCheckIn = __bind(this.toCheckIn, this);
+      this.toHome = __bind(this.toHome, this);
+      this.createStationMarker = __bind(this.createStationMarker, this);
+      this.renderStations = __bind(this.renderStations, this);
+      this.getContentFromName = __bind(this.getContentFromName, this);
+      this.createInfoWindowContent = __bind(this.createInfoWindowContent, this);
+      this.afterRender = __bind(this.afterRender, this);
+      this.initialize = __bind(this.initialize, this);
+      CheckInMapView.__super__.constructor.apply(this, arguments);
+    }
+
+    CheckInMapView.prototype.isCheckInMap = true;
+
+    CheckInMapView.prototype.el = "#check-in-map-view-container";
+
+    CheckInMapView.prototype.mapId = "check-in-map-container";
+
+    CheckInMapView.prototype.template = template;
+
+    CheckInMapView.prototype.location = null;
+
+    CheckInMapView.prototype.stations = new Stations();
+
+    CheckInMapView.prototype.checkIns = new CheckIns();
+
+    CheckInMapView.prototype.infoWindow = new google.maps.InfoWindow();
+
+    CheckInMapView.prototype.markers = {};
+
+    CheckInMapView.prototype.infoWindowContent = {};
+
+    CheckInMapView.prototype.events = {
+      'click #check-in-map-to-check-in': 'toCheckIn',
+      'click #check-in-map-to-home': 'toHome'
+    };
+
+    CheckInMapView.prototype.initialize = function() {
+      this.mapOptions = {
+        center: new google.maps.LatLng(42.347031, -71.082788),
+        zoom: 15,
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+      };
+      this.checkIns.fetch(this.createInfoWindowContent, true);
+      return this.stations.fetch;
+    };
+
+    CheckInMapView.prototype.afterRender = function() {
+      this.map = new google.maps.Map(document.getElementById(this.mapId), this.mapOptions);
+      this.transitLayer = new google.maps.TransitLayer();
+      this.transitLayer.setMap(this.map);
+      if (!this.location.isDefault) this.marker.setMap(this.map);
+      return this.renderStations();
+    };
+
+    CheckInMapView.prototype.createInfoWindowContent = function(render) {
+      var checkIn, info, _i, _len, _ref;
+      this.infoWindowContent = {};
+      _ref = this.checkIns.models;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        checkIn = _ref[_i];
+        info = {
+          direction: checkIn.get("direction"),
+          time: new Date(checkIn.get("time"))
+        };
+        if (!this.infoWindowContent[checkIn.get("name")]) {
+          this.infoWindowContent[checkIn.get("name")] = [];
+        }
+        this.infoWindowContent[checkIn.get("name")].push(info);
+      }
+      if (render) return this.afterRender();
+    };
+
+    CheckInMapView.prototype.getContentFromName = function(name) {
+      var content, info, infos, time, timeReadable, _i, _len;
+      infos = this.infoWindowContent[name];
+      if (!infos) {
+        this.infoWindowContent[name] = [];
+        infos = [];
+      }
+      content = "<strong>" + name + "</strong>";
+      for (_i = 0, _len = infos.length; _i < _len; _i++) {
+        info = infos[_i];
+        time = new Date(info.time);
+        timeReadable = "" + (helpers.convertToTimeString(time));
+        content += "<div>Direction: " + info.direction + "<br>Arrival Time: " + timeReadable + "</div>";
+      }
+      return content;
+    };
+
+    CheckInMapView.prototype.renderStations = function() {
+      var station, _i, _len, _ref, _results;
+      _ref = this.stations.models;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        station = _ref[_i];
+        _results.push(this.createStationMarker(station));
+      }
+      return _results;
+    };
+
+    CheckInMapView.prototype.createStationMarker = function(station) {
+      var content, name,
+        _this = this;
+      name = station.get("name");
+      content = this.getContentFromName(name);
+      this.markers[name] = new google.maps.Marker({
+        position: new google.maps.LatLng(station.get("latitude"), station.get("longitude")),
+        title: name,
+        icon: Icons.station
+      });
+      this.markers[name].setMap(this.map);
+      return google.maps.event.addListener(this.markers[name], 'click', function() {
+        _this.infoWindow.setContent(content);
+        return _this.infoWindow.open(_this.map, _this.markers[name]);
+      });
+    };
+
+    CheckInMapView.prototype.toHome = function() {
+      return helpers.toHome();
+    };
+
+    CheckInMapView.prototype.toCheckIn = function() {
+      return helpers.toCheckIn();
+    };
+
+    return CheckInMapView;
+
+  })(View);
+
+  module.exports = CheckInMapView;
+
+}).call(this);
+
+  }
+}));
+(this.require.define({
   "views/checkInView": function(exports, require, module) {
     (function() {
   var CheckInView, View, app, helpers, template,
@@ -856,7 +1042,7 @@
 (this.require.define({
   "views/headerView": function(exports, require, module) {
     (function() {
-  var HomeView, View, app, helpers, template,
+  var HeaderView, View, app, helpers, template,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
@@ -869,40 +1055,40 @@
 
   helpers = require('../lib/helpers');
 
-  HomeView = (function(_super) {
+  HeaderView = (function(_super) {
 
-    __extends(HomeView, _super);
+    __extends(HeaderView, _super);
 
-    function HomeView() {
+    function HeaderView() {
       this.resizeHeader = __bind(this.resizeHeader, this);
       this.afterRender = __bind(this.afterRender, this);
       this.initialize = __bind(this.initialize, this);
-      HomeView.__super__.constructor.apply(this, arguments);
+      HeaderView.__super__.constructor.apply(this, arguments);
     }
 
-    HomeView.prototype.el = "#header-view-container";
+    HeaderView.prototype.el = "#header-view-container";
 
-    HomeView.prototype.template = template;
+    HeaderView.prototype.template = template;
 
-    HomeView.prototype.isHeader = true;
+    HeaderView.prototype.isHeader = true;
 
-    HomeView.prototype.initialize = function() {
+    HeaderView.prototype.initialize = function() {
       return $(window).resize(this.resizeHeader);
     };
 
-    HomeView.prototype.afterRender = function() {
+    HeaderView.prototype.afterRender = function() {
       return this.resizeHeader();
     };
 
-    HomeView.prototype.resizeHeader = function() {
+    HeaderView.prototype.resizeHeader = function() {
       return helpers.resizeText("header-banner", 12);
     };
 
-    return HomeView;
+    return HeaderView;
 
   })(View);
 
-  module.exports = HomeView;
+  module.exports = HeaderView;
 
 }).call(this);
 
@@ -991,7 +1177,7 @@
 (this.require.define({
   "views/mapView": function(exports, require, module) {
     (function() {
-  var CheckIns, Icons, Location, MapView, Stations, Stops, View, app, helpers, template,
+  var Icons, Location, MapView, Stations, Stops, View, app, helpers, template,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
@@ -1009,8 +1195,6 @@
   Stops = require('../collections/stops');
 
   Stations = require('../collections/stations');
-
-  CheckIns = require('../collections/checkIns');
 
   Icons = require('../lib/icons');
 
@@ -1045,8 +1229,6 @@
 
     MapView.prototype.stations = new Stations();
 
-    MapView.prototype.checkins = new Checkins();
-
     MapView.prototype.infoWindow = new google.maps.InfoWindow();
 
     MapView.prototype.markers = {};
@@ -1065,9 +1247,7 @@
         zoom: 15,
         mapTypeId: google.maps.MapTypeId.ROADMAP
       };
-      this.stops.fetch(this.createInfoWindowContent, true);
-      this.stations.fetch(this.render);
-      return this.checkins.fetch(this.afterRender);
+      return this.stops.fetch(this.createInfoWindowContent, true, this.stations.fetch(this.render));
     };
 
     MapView.prototype.afterRender = function() {
@@ -1075,8 +1255,7 @@
       this.transitLayer = new google.maps.TransitLayer();
       this.transitLayer.setMap(this.map);
       if (!this.location.isDefault) this.marker.setMap(this.map);
-      this.renderStations();
-      return this.renderCheckins();
+      return this.renderStations();
     };
 
     MapView.prototype.locationCallback = function(location) {
@@ -1170,6 +1349,16 @@
 
 }).call(this);
 
+  }
+}));
+(this.require.define({
+  "views/templates/checkInMapTemplate": function(exports, require, module) {
+    module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
+  helpers = helpers || Handlebars.helpers;
+  var foundHelper, self=this;
+
+
+  return "<div id=\"check-in-map-container\"></div>\n<div class=\"submit-check-in-button center\"> <button id=\"check-in-map-to-check-in\" class=\"hs-button large green\">Submit Check In</button> <button id= \"check-in-map-to-home\" class=\"hs-button large red\">Back to Home</button></div>";});
   }
 }));
 (this.require.define({

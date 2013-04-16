@@ -4577,7 +4577,7 @@ label{display:inline-block;width:55px}
 .waiting-button{width:33%}
 .needs-bottom{border-bottom-color:#008000;border-bottom-width:3px;border-bottom-style:solid;padding-bottom:5px}
 .needs-top-margin{margin-top:10px}
-#map-view-container{min-height:360px;height:auto}
-#map-container{width:100%;min-height:320px;height:100%;color:#000;margin-bottom:5px}
+#map-view-container,#check-in-map-view-container{min-height:360px;height:auto}
+#map-container,#check-in-map-container{width:100%;min-height:320px;height:100%;color:#000;margin-bottom:5px}
 .thanks-top-margin{margin-top:50px}
 .thanks-button{width:49%}

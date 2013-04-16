@@ -1,8 +1,8 @@
 app        = require 'application'
 Collection = require './collection'
-CheckIn    = require '../models/checkin'
+CheckIn    = require '../models/checkIn'
 
-class Stations extends Collection
+class CheckIns extends Collection
   urlBase : "#{app.env.API_BASE}/checkin/all"
   model   : CheckIn
 
@@ -17,4 +17,4 @@ class Stations extends Collection
       error: (xhr, status, error) => 
         app.helpers.errorDialog "Problem getting checkin information from #{@urlBase}. Reason: #{error}."
 
-module.exports = Stations
+module.exports = CheckIns

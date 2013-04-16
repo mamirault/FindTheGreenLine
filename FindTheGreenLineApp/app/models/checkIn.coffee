@@ -5,8 +5,5 @@ class CheckIn extends Model
 	isStop : true
 	name : ""
 	direction : ""
-
-	constructor: () ->
-		console.log "I've been constructed because I'm a model"
 	
 module.exports = CheckIn

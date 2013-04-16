@@ -3,7 +3,7 @@ app      = require '../application'
 template = require './templates/headerViewTemplate'
 helpers  = require '../lib/helpers'
 
-class HomeView extends View
+class HeaderView extends View
   el       : "#header-view-container"
   template : template
   isHeader : true
@@ -17,4 +17,4 @@ class HomeView extends View
   resizeHeader: =>
     helpers.resizeText "header-banner", 12
 
-module.exports = HomeView
+module.exports = HeaderView

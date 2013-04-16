@@ -1,36 +1,35 @@
 View     = require './view'
 app      = require '../application'
-template = require './templates/mapViewTemplate'
+template = require './templates/checkInMapTemplate'
 helpers  = require '../lib/helpers'
 Location = require '../models/location'
-Stops    = require '../collections/stops'
 Stations = require '../collections/stations'
+CheckIns = require '../collections/checkIns'
 Icons    = require '../lib/icons'
 
-class MapView extends View
-  isMap      : true
-  el         : "#map-view-container"
-  mapId      : "map-container"
+class CheckInMapView extends View
+  isCheckInMap      : true
+  el         : "#check-in-map-view-container"
+  mapId      : "check-in-map-container"
   template   : template
   location   : null
-  stops      : new Stops()
   stations   : new Stations()
+  checkIns   : new CheckIns()
   infoWindow : new google.maps.InfoWindow()
   markers    : {}
   infoWindowContent : {}
   events: 
-      'click #map-to-check-in': 'toCheckIn'
-      'click #map-to-home' : 'toHome'
+      'click #check-in-map-to-check-in': 'toCheckIn'
+      'click #check-in-map-to-home' : 'toHome'
 
   initialize: =>
-    @location = new Location @locationCallback, false
     @mapOptions =
       center    : new google.maps.LatLng(42.347031, -71.082788)
       zoom      : 15
       mapTypeId : google.maps.MapTypeId.ROADMAP
-    @stops.fetch @createInfoWindowContent, true, 
-    @stations.fetch @render
 
+    @checkIns.fetch @createInfoWindowContent, true
+    @stations.fetch
 
   afterRender: =>
     @map = new google.maps.Map document.getElementById(@mapId), @mapOptions
@@ -41,25 +40,15 @@ class MapView extends View
 
     @renderStations()
 
-  locationCallback: (location) =>
-    app.newLocation location
-    @location = location
-    @mapOptions.center = new google.maps.LatLng location.coords.latitude, location.coords.longitude
-    @marker = new google.maps.Marker
-      position: @mapOptions.center
-      title: "You"
-      icon: Icons.person
-    @afterRender()
-
   createInfoWindowContent: (render) =>
     @infoWindowContent = {}
-    for stop in @stops.models
+    for checkIn in @checkIns.models
       info = 
-        direction : stop.get "direction"
-        time      : new Date stop.get "time"
-      if !@infoWindowContent[stop.get "name"]
-        @infoWindowContent[stop.get "name"] = []
-      @infoWindowContent[stop.get "name"].push info
+        direction : checkIn.get "direction"
+        time      : new Date checkIn.get "time"
+      if !@infoWindowContent[checkIn.get "name"]
+        @infoWindowContent[checkIn.get "name"] = []
+      @infoWindowContent[checkIn.get "name"].push info
 
     if render
       @afterRender()
@@ -99,4 +88,4 @@ class MapView extends View
   toCheckIn: () =>
     helpers.toCheckIn()
 
-module.exports = MapView
+module.exports = CheckInMapView

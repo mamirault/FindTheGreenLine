@@ -4,14 +4,16 @@ application =
 
     HomeView   = require '/views/homeView'
     MapView    = require '/views/mapView' 
+    CheckInMapView    = require '/views/checkInMapView' 
+    CheckInView    = require '/views/checkInView' 
     HeaderView = require '/views/headerView'
-    CheckInView = require '/views/checkInView' 
     ThanksView = require '/views/thanksView' 
 
     @views =
+      headerView  : new HeaderView()
       homeView    : new HomeView()
       mapView     : new MapView()
-      headerView  : new HeaderView()
+      checkInMapView : new CheckInMapView()
       checkInView : new CheckInView()
       thanksView : new ThanksView()
 
@@ -25,6 +27,15 @@ application =
     for viewName of app.views
       view = app.views[viewName]
       if view.isMap || view.isHeader
+        view.render()
+        view.show()
+      else
+        view.hide()
+
+  showCheckInMapView: () =>
+    for viewName of app.views
+      view = app.views[viewName]
+      if view.isCheckInMap || view.isHeader
         view.render()
         view.show()
       else

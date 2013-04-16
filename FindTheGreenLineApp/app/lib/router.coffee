@@ -4,6 +4,7 @@ class AppRouter extends Backbone.Router
   routes:    
     "/thanks"  : "thanks"
     "/map"     : "map"
+    "/checkinmap"     : "checkInMap"
     "/checkin" : "checkIn"
     "/checkin/:line/:station" : "checkInStation"
     "/home"    : "home"
@@ -16,6 +17,10 @@ class AppRouter extends Backbone.Router
   map: () ->
     app.showMapView()
     app.views.mapView.render()
+
+  checkInMap: () ->
+    app.showCheckInMapView()
+    app.views.CheckInMapView.render()
 
   checkIn: () ->
     app.showCheckInView()

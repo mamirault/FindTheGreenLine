@@ -33,6 +33,4 @@ class HomeView extends View
     else
       {}
 
-
-
 module.exports = HomeView
