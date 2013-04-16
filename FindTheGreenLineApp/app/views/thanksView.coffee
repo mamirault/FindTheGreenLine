@@ -8,11 +8,11 @@ class ThanksView extends View
   el       : "#thanks-view-container"
   template : template
   events: 
-      'click #thanks-to-check-in': 'toCheckIn'
+      'click #thanks-to-map': 'toMap'
       'click #thanks-to-home' : 'toHome'
 
-   toCheckIn: =>
-   	helpers.toCheckIn()
+   toMap: =>
+   	helpers.toMap()
 
    toHome: =>
    	helpers.toHome()

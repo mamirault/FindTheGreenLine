@@ -5,6 +5,7 @@ helpers  = require '../lib/helpers'
 Location = require '../models/location'
 Stops    = require '../collections/stops'
 Stations = require '../collections/stations'
+CheckIngs = require '../collections/checkIns'
 Icons    = require '../lib/icons'
 
 class MapView extends View
@@ -15,6 +16,7 @@ class MapView extends View
   location   : null
   stops      : new Stops()
   stations   : new Stations()
+  checkins   : new Checkins()
   infoWindow : new google.maps.InfoWindow()
   markers    : {}
   infoWindowContent : {}
@@ -30,6 +32,7 @@ class MapView extends View
       mapTypeId : google.maps.MapTypeId.ROADMAP
     @stops.fetch @createInfoWindowContent, true
     @stations.fetch @render
+    @checkins.fetch @afterRender
 
 
   afterRender: =>
@@ -40,6 +43,7 @@ class MapView extends View
       @marker.setMap @map
 
     @renderStations()
+    @renderCheckins()
 
   locationCallback: (location) =>
     app.newLocation location
@@ -78,9 +82,9 @@ class MapView extends View
 
   renderStations: =>
     for station in @stations.models
-      @createMarker station
+      @createStationMarker station
 
-  createMarker: (station) =>
+  createStationMarker: (station) =>
     name = station.get "name"
     content = @getContentFromName name
     @markers[name] = new google.maps.Marker

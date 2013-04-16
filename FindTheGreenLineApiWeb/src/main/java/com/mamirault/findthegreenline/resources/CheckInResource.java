@@ -37,17 +37,18 @@ public class CheckInResource {
     return checkInDAO.getAllCheckIns();
   }
 
-  @POST
+  @GET
   @Timed
-  public String checkin(@QueryParam("name") String name, @QueryParam("direction") String direction, @QueryParam("time") long time, @QueryParam("latitude") double latitude, @QueryParam("longitude") double longitude) {
+  @Path("/new")
+  public String checkin(@QueryParam("name") String name, @QueryParam("direction") String direction, @QueryParam("time") long time) {
     Preconditions.checkArgument(direction.equalsIgnoreCase("East") || direction.equalsIgnoreCase("West"), "Direction must be either 'East' or 'West.'");
     Preconditions.checkArgument(!Strings.isNullOrEmpty(name), "Name cannot be empty");
     Preconditions.checkArgument(time >= 0, "Time cannot be negative");
-    Preconditions.checkArgument(latitude == 0, "Latitude cannot be 0");
-    Preconditions.checkArgument(longitude == 0, "Longitude cannot be 0");
+  //  Preconditions.checkArgument(latitude == 0, "Latitude cannot be 0");
+  //  Preconditions.checkArgument(longitude == 0, "Longitude cannot be 0");
 
     Optional<Station> station = Station.getStationFromName(name);
-    CheckIn checkIn = new CheckIn(station.get(), Direction.valueOf(direction), time, longitude, latitude);
+    CheckIn checkIn = new CheckIn(station.get(), Direction.valueOf(direction), time, 0, 0);
     checkInDAO.insert(checkIn);
 
     return new JsonGeneratorWrapper().startObject().string("id", checkIn.getId()).endObject().asString();

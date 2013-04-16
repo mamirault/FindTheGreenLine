@@ -209,7 +209,6 @@
         type: 'GET',
         dataType: 'json',
         success: function(data, textStatus, jqHXR) {
-          console.log("CHECKIN DATA");
           _this.reset(_this.parse(data));
           return callback();
         },
@@ -779,6 +778,8 @@
 
     CheckInView.prototype.thankYou = ["Running late, no surprise there.  Now everybody else knows though. Thanks!!", "Classic Green Line, just being wherever it wants, whenever it wants. Thanks for the heads up!"];
 
+    CheckInView.prototype.urlBase = "" + app.env.API_BASE + "/checkin/new";
+
     CheckInView.prototype.events = {
       'click #check-in-to-map': 'toMap',
       'click #check-in-to-thanks': 'toThanks'
@@ -822,6 +823,23 @@
     };
 
     CheckInView.prototype.toThanks = function() {
+      var direction, line, station, time,
+        _this = this;
+      station = $("#station-select").val();
+      line = $("#line-select").val();
+      direction = $("#direction-select").val();
+      time = new Date();
+      $.ajax({
+        url: "" + this.urlBase + "?name=" + station + "+Station&line=" + line + "&direction=" + direction + "&time=" + (new Date().getTime()),
+        type: 'GET',
+        dataType: 'json',
+        success: function(data, textStatus, jqHXR) {
+          return console.log(data);
+        },
+        error: function(xhr, status, error) {
+          return console.log("Error saving check in");
+        }
+      });
       return helpers.toThanks();
     };
 
@@ -973,7 +991,7 @@
 (this.require.define({
   "views/mapView": function(exports, require, module) {
     (function() {
-  var Icons, Location, MapView, Stations, Stops, View, app, helpers, template,
+  var CheckIngs, Icons, Location, MapView, Stations, Stops, View, app, helpers, template,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
@@ -992,6 +1010,8 @@
 
   Stations = require('../collections/stations');
 
+  CheckIngs = require('../collections/checkIns');
+
   Icons = require('../lib/icons');
 
   MapView = (function(_super) {
@@ -1001,7 +1021,7 @@
     function MapView() {
       this.toCheckIn = __bind(this.toCheckIn, this);
       this.toHome = __bind(this.toHome, this);
-      this.createMarker = __bind(this.createMarker, this);
+      this.createStationMarker = __bind(this.createStationMarker, this);
       this.renderStations = __bind(this.renderStations, this);
       this.getContentFromName = __bind(this.getContentFromName, this);
       this.createInfoWindowContent = __bind(this.createInfoWindowContent, this);
@@ -1025,6 +1045,8 @@
 
     MapView.prototype.stations = new Stations();
 
+    MapView.prototype.checkins = new Checkins();
+
     MapView.prototype.infoWindow = new google.maps.InfoWindow();
 
     MapView.prototype.markers = {};
@@ -1044,7 +1066,8 @@
         mapTypeId: google.maps.MapTypeId.ROADMAP
       };
       this.stops.fetch(this.createInfoWindowContent, true);
-      return this.stations.fetch(this.render);
+      this.stations.fetch(this.render);
+      return this.checkins.fetch(this.afterRender);
     };
 
     MapView.prototype.afterRender = function() {
@@ -1052,7 +1075,8 @@
       this.transitLayer = new google.maps.TransitLayer();
       this.transitLayer.setMap(this.map);
       if (!this.location.isDefault) this.marker.setMap(this.map);
-      return this.renderStations();
+      this.renderStations();
+      return this.renderCheckins();
     };
 
     MapView.prototype.locationCallback = function(location) {
@@ -1108,12 +1132,12 @@
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         station = _ref[_i];
-        _results.push(this.createMarker(station));
+        _results.push(this.createStationMarker(station));
       }
       return _results;
     };
 
-    MapView.prototype.createMarker = function(station) {
+    MapView.prototype.createStationMarker = function(station) {
       var content, name,
         _this = this;
       name = station.get("name");
@@ -1161,7 +1185,7 @@
   stack1 = (stack1 === null || stack1 === undefined || stack1 === false ? stack1 : stack1.please);
   if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
   else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "checkin.please", { hash: {} }); }
-  buffer += escapeExpression(stack1) + "</div>\n<div id=\"hs_field_wrapper_select\" class=\"field  \">\n    <label for=\"basic_form_id_select\">\n        Line\n    </label>\n    <div class=\"input line-select\">\n        <select name=\"select\" required=\"required\" id=\"line-select\" class=\"hs-input\">\n        		<option value=\"A\">\n               Trunk\n            </option>\n            <option value=\"B\">\n               B Line\n            </option>\n            <option value=\"C\">\n                C Line\n            </option>\n            <option value=\"D\">\n                D Line\n            </option>\n            <option value=\"E\">\n                E Line\n            </option>\n        </select>\n    </div>\n</div>\n<div id=\"hs_field_wrapper_select\" class=\"field\">\n    <label for=\"basic_form_id_select\">\n        Station\n    </label>\n    <div class=\"input station-select\">\n        <select name=\"select\" required=\"required\" id=\"station-select\" class=\"hs-input\">\n        	<option value=\"Lechmere\">\n               Lechmere\n            </option>\n            <option value=\"Science Park\">\n               Science Park\n            </option>\n        		<option value=\"North\">\n               North Station\n            </option>\n            <option value=\"Haymarket\">\n               Haymarket\n            </option>\n            <option value=\"Government Center\">\n                Government Center\n            </option>\n            <option value=\"Park St.\">\n                Park St.\n            </option>\n            <option value=\"Boylston\">\n            	Boylston\n            </option>\n            <option value=\"Arlington\">\n            	Arlington\n            </option>\n            <option value=\"Copley\">\n            	Copley\n            </option>\n            <option value=\"Prudential\">\n            	Prudential\n            </option>\n            <option value=\"Symphony\">\n            	Symphony\n            </option>\n            <option value=\"Northeastern University\">\n            	Northeastern University\n            </option>\n            <option value=\"Museum of Fine Arts\">\n            	Museum of Fine Arts\n            </option>\n            <option value=\"Longwood Medical Area\">\n            	Longwood Medical Area\n            </option>\n            <option value=\"Brigham Circle\">\n            	Brigham Circle\n            </option>\n            <option value=\"Fenwood Rd.\">\n            	Fenwood Rd.\n            </option>\n            <option value=\"Mission Park\">\n            	Mission Park\n            </option>\n            <option value=\"Riverway\">\n            	Riverway\n            </option>\n            <option value=\"Back of the Hill\">\n            	Back of the Hill\n            </option>\n            <option value=\"Heath St.\">\n            	Heath St.\n            </option>\n        </select>\n    </div>\n</div>\n<div id=\"hs_field_wrapper_select\" class=\"field  \">\n    <label for=\"basic_form_id_select\">\n        Direction\n    </label>\n    <div class=\"input direction-select\">\n        <select name=\"select\" required=\"required\" id=\"basic_form_id_select\" class=\"hs-input\">\n        		<option value=\"Lechmere\">\n        			East Towards Lechmere\n            </option>\n            <option value=\"Heath St.\">\n               West Towards Heath St.\n            </option>\n        </select>\n    </div>\n</div>\n<div class=\"submit-check-in-button center\"> <button id=\"check-in-to-thanks\" class=\"hs-button large green\">Submit Check In</button> <button id=\"check-in-to-map\" class=\"hs-button large red\">Back to Map</button></div>";
+  buffer += escapeExpression(stack1) + "</div>\n<div id=\"hs_field_wrapper_select\" class=\"field  \">\n    <label for=\"basic_form_id_select\">\n        Line\n    </label>\n    <div class=\"input line-select\">\n        <select name=\"select\" required=\"required\" id=\"line-select\" class=\"hs-input\">\n        		<option value=\"A\">\n               Trunk\n            </option>\n            <option value=\"B\">\n               B Line\n            </option>\n            <option value=\"C\">\n                C Line\n            </option>\n            <option value=\"D\">\n                D Line\n            </option>\n            <option value=\"E\">\n                E Line\n            </option>\n        </select>\n    </div>\n</div>\n<div id=\"hs_field_wrapper_select\" class=\"field\">\n    <label for=\"basic_form_id_select\">\n        Station\n    </label>\n    <div class=\"input station-select\">\n        <select name=\"select\" required=\"required\" id=\"station-select\" class=\"hs-input\">\n        	<option value=\"Lechmere\">\n               Lechmere\n            </option>\n            <option value=\"Science Park\">\n               Science Park\n            </option>\n        		<option value=\"North\">\n               North Station\n            </option>\n            <option value=\"Haymarket\">\n               Haymarket\n            </option>\n            <option value=\"Government Center\">\n                Government Center\n            </option>\n            <option value=\"Park St.\">\n                Park St.\n            </option>\n            <option value=\"Boylston\">\n            	Boylston\n            </option>\n            <option value=\"Arlington\">\n            	Arlington\n            </option>\n            <option value=\"Copley\">\n            	Copley\n            </option>\n            <option value=\"Prudential\">\n            	Prudential\n            </option>\n            <option value=\"Symphony\">\n            	Symphony\n            </option>\n            <option value=\"Northeastern University\">\n            	Northeastern University\n            </option>\n            <option value=\"Museum of Fine Arts\">\n            	Museum of Fine Arts\n            </option>\n            <option value=\"Longwood Medical Area\">\n            	Longwood Medical Area\n            </option>\n            <option value=\"Brigham Circle\">\n            	Brigham Circle\n            </option>\n            <option value=\"Fenwood Rd.\">\n            	Fenwood Rd.\n            </option>\n            <option value=\"Mission Park\">\n            	Mission Park\n            </option>\n            <option value=\"Riverway\">\n            	Riverway\n            </option>\n            <option value=\"Back of the Hill\">\n            	Back of the Hill\n            </option>\n            <option value=\"Heath St.\">\n            	Heath St.\n            </option>\n        </select>\n    </div>\n</div>\n<div id=\"hs_field_wrapper_select\" class=\"field  \">\n    <label for=\"basic_form_id_select\">\n        Direction\n    </label>\n    <div class=\"input direction-select\">\n        <select name=\"select\" required=\"required\" id=\"direction-select\" class=\"hs-input\">\n        		<option value=\"East\">\n        			East Towards Lechmere\n            </option>\n            <option value=\"West\">\n               West Towards Heath St.\n            </option>\n        </select>\n    </div>\n</div>\n<div class=\"submit-check-in-button center\"> <button id=\"check-in-to-thanks\" class=\"hs-button large green\">Submit Check In</button> <button id=\"check-in-to-map\" class=\"hs-button large red\">Back to Map</button></div>";
   return buffer;});
   }
 }));
@@ -1235,7 +1259,7 @@ function program1(depth0,data) {
   var foundHelper, self=this;
 
 
-  return "<div><span><h4>Thanks</h3></span></div>\n<div class=\"center\"> <button id=\"thanks-to-home\" class=\"hs-button large green\">Back to Home</button> <button id=\"thanks-to-map\" class=\"hs-button large red\">Back to Map</button></div>";});
+  return "<div><span><h4>Thanks for reporting the Green Line location.  It's so hard to for them to stay on schedule the only we can know where they all are is if we work together.  Way to be part of the team!</h3></span></div>\n<div class=\"center thanks-top-margin\"> <button id=\"thanks-to-home\" class=\"thanks-button hs-button large green\">Back to Home</button> <button id=\"thanks-to-map\" class=\"hs-button large red thanks-button\">Back to Map</button></div>";});
   }
 }));
 (this.require.define({
@@ -1260,7 +1284,7 @@ function program1(depth0,data) {
 
     function ThanksView() {
       this.toHome = __bind(this.toHome, this);
-      this.toCheckIn = __bind(this.toCheckIn, this);
+      this.toMap = __bind(this.toMap, this);
       ThanksView.__super__.constructor.apply(this, arguments);
     }
 
@@ -1271,12 +1295,12 @@ function program1(depth0,data) {
     ThanksView.prototype.template = template;
 
     ThanksView.prototype.events = {
-      'click #thanks-to-check-in': 'toCheckIn',
+      'click #thanks-to-map': 'toMap',
       'click #thanks-to-home': 'toHome'
     };
 
-    ThanksView.prototype.toCheckIn = function() {
-      return helpers.toCheckIn();
+    ThanksView.prototype.toMap = function() {
+      return helpers.toMap();
     };
 
     ThanksView.prototype.toHome = function() {

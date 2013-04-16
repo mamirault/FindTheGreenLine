@@ -43,7 +43,7 @@ public class CheckInDAO {
 
   public int insert(CheckIn checkIn) {
     try {
-      return updateOrInsert(INSERT_SQL, Lists.<Object> newArrayList(checkIn.getId(), checkIn.getName(), checkIn.getDirection().toString(), TimeUtils.getRelative(checkIn.getTime()), checkIn.getLatitude(), checkIn.getLongitude()));
+      return updateOrInsert(INSERT_SQL, Lists.<Object> newArrayList(checkIn.getId(), checkIn.getName(), checkIn.getDirection().toString(), TimeUtils.getRelative(checkIn.getTime()) + TimeUnit.HOURS.toMillis(5), checkIn.getLatitude(), checkIn.getLongitude()));
     } catch (ParseException e) {
       e.printStackTrace();
       return 0;

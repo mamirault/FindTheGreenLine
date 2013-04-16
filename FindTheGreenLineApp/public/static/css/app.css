@@ -4566,6 +4566,7 @@ a.thumbnail:hover {
 .center{margin:0 auto}
 body{background-color:#000;color:#fff;height:100%}
 html{height:98%;width:98%;margin:1%}
+label:{color:#fff}
 .line-select,.station-select,.direction-select{display:inline-block}
 label{display:inline-block;width:55px}
 .submit-check-in-button button{width:49%}
@@ -4578,3 +4579,5 @@ label{display:inline-block;width:55px}
 .needs-top-margin{margin-top:10px}
 #map-view-container{min-height:360px;height:auto}
 #map-container{width:100%;min-height:320px;height:100%;color:#000;margin-bottom:5px}
+.thanks-top-margin{margin-top:50px}
+.thanks-button{width:49%}
