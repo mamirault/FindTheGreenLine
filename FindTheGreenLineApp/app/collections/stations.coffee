@@ -3,7 +3,7 @@ Collection = require './collection'
 Station    = require '../models/station'
 
 class Stations extends Collection
-  urlBase : "http://localhost:8080/stations/all"
+  urlBase : "#{app.env.API_BASE}/stations/all"
   model   : Station
 
   fetch: (callback) =>

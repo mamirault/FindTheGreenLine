@@ -144,10 +144,10 @@ public class GMapScheduleManager {
   
   @Test
   public void getAllTimes() throws ParseException {
-    long time = TimeUtils.relativeToCurrent(RELATIVE_AM_500 + TimeUnit.HOURS.toMillis(10));
+    long time = TimeUtils.relativeToCurrent(RELATIVE_AM_500);
     while (time <= TimeUtils.relativeToCurrent(RELATIVE_AM_1230_NEXT_DAY + TimeUnit.MINUTES.toMillis(10))) {
       System.out.println(new Date(time));
-      Optional<Stop> maybeDepartureStop = getData(Station.RIVERWAY, Station.NORTH, TimeUnit.MILLISECONDS.toSeconds(time), true, false, true);
+      Optional<Stop> maybeDepartureStop = getData(Station.MISSION_PARK, Station.HAYMARKET, TimeUnit.MILLISECONDS.toSeconds(time), true, false, true);
       if (maybeDepartureStop.isPresent()) {
         time = maybeDepartureStop.get().  getTime() + ONE_MINUTE;
       } else {

@@ -156,7 +156,7 @@
       Stations.__super__.constructor.apply(this, arguments);
     }
 
-    Stations.prototype.urlBase = "http://localhost:8080/stations/all";
+    Stations.prototype.urlBase = "" + app.env.API_BASE + "/stations/all";
 
     Stations.prototype.model = Station;
 
@@ -209,7 +209,7 @@
       Stops.__super__.constructor.apply(this, arguments);
     }
 
-    Stops.prototype.urlBase = "http://localhost:8080/stops/timeframe";
+    Stops.prototype.urlBase = "" + app.env.API_BASE + "/stops/timeframe";
 
     Stops.prototype.model = Stop;
 
@@ -244,7 +244,11 @@
     (function() {
   var constants;
 
-  constants = module.exports = constants;
+  constants = {
+    API_BASE: 'http://api.findthegreenline.com'
+  };
+
+  module.exports = constants;
 
 }).call(this);
 
