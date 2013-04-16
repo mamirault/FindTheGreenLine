@@ -7,7 +7,6 @@ module.exports = class View extends Backbone.View
     return
 
   render: =>
-  #  @show()
     $(@el).html @template @getRenderData()
     @afterRender()
     @
@@ -16,7 +15,9 @@ module.exports = class View extends Backbone.View
     return
 
   hide: ->
-    $(@el)._hide()
+    @current = false
+    $(@el).hide()
 
   show: ->
-    $(@el)._show()
+    @current = true
+    $(@el).show()

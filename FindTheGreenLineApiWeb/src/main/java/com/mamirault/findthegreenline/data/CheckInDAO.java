@@ -15,7 +15,7 @@ import com.mamirault.findthegreenline.jdbc.DataSourceCreator;
 import com.mamirault.findthegreenline.utils.TimeUtils;
 
 public class CheckInDAO {
-  private static final String UPDATE_SQL = "UPDATE CheckIns SET time=? latitude=? longitude= where id=?;";
+  private static final String UPDATE_SQL = "UPDATE CheckIns SET name=? time=? latitude=? longitude= where id=?;";
 
   private static final String INSERT_SQL = "INSERT INTO CheckIns VALUES(?, ?, ?, ?, ?, ?);";
   private static final String SELECT_ONE_SQL = "SELECT * FROM CheckIns where id=?;";

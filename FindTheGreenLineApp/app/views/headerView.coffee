@@ -6,6 +6,7 @@ helpers  = require '../lib/helpers'
 class HomeView extends View
   el       : "#header-view-container"
   template : template
+  isHeader : true
 
   initialize: =>
     $(window).resize @resizeHeader

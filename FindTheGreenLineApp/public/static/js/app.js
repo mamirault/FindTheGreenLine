@@ -81,30 +81,130 @@
 (this.require.define({
   "application": function(exports, require, module) {
     (function() {
-  var application;
+  var application,
+    _this = this;
 
   application = {
     initialize: function(env, onSuccess) {
-      var AppRouter, HeaderView, HomeView, MapView;
+      var AppRouter, CheckInView, HeaderView, HomeView, MapView;
       this.env = env;
       HomeView = require('/views/homeView');
       MapView = require('/views/mapView');
       HeaderView = require('/views/headerView');
+      CheckInView = require('/views/checkInView');
       this.views = {
         homeView: new HomeView(),
         mapView: new MapView(),
-        headerView: new HeaderView()
+        headerView: new HeaderView(),
+        checkInView: new CheckInView()
       };
       AppRouter = require('lib/router');
       this.router = new AppRouter({
         pushState: true
       });
-      this.views.headerView.render();
       return onSuccess();
+    },
+    showMapView: function() {
+      var view, viewName, _results;
+      _results = [];
+      for (viewName in app.views) {
+        view = app.views[viewName];
+        if (view.isMap || view.isHeader) {
+          view.render();
+          _results.push(view.show());
+        } else {
+          _results.push(view.hide());
+        }
+      }
+      return _results;
+    },
+    showHomeView: function() {
+      var view, viewName, _results;
+      _results = [];
+      for (viewName in app.views) {
+        view = app.views[viewName];
+        if (view.isHome || view.isHeader) {
+          view.render();
+          _results.push(view.show());
+        } else {
+          _results.push(view.hide());
+        }
+      }
+      return _results;
+    },
+    showCheckInView: function() {
+      var view, viewName, _results;
+      _results = [];
+      for (viewName in app.views) {
+        view = app.views[viewName];
+        if (view.isCheckIn || view.isHeader) {
+          view.render();
+          _results.push(view.show());
+        } else {
+          _results.push(view.hide());
+        }
+      }
+      return _results;
+    },
+    newLocation: function(location) {
+      if (homeView.isCurrent) return homeView.prompt(location);
     }
   };
 
   module.exports = application;
+
+}).call(this);
+
+  }
+}));
+(this.require.define({
+  "collections/checkins": function(exports, require, module) {
+    (function() {
+  var CheckIn, Collection, Stations, app,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+  app = require('application');
+
+  Collection = require('./collection');
+
+  CheckIn = require('../models/checkin');
+
+  Stations = (function(_super) {
+
+    __extends(Stations, _super);
+
+    function Stations() {
+      this.fetch = __bind(this.fetch, this);
+      Stations.__super__.constructor.apply(this, arguments);
+    }
+
+    Stations.prototype.urlBase = "" + app.env.API_BASE + "/checkin/all";
+
+    Stations.prototype.model = CheckIn;
+
+    Stations.prototype.fetch = function(callback) {
+      var _this = this;
+      return $.ajax({
+        url: this.urlBase,
+        type: 'GET',
+        dataType: 'json',
+        success: function(data, textStatus, jqHXR) {
+          _this.reset(_this.parse(data));
+          return callback();
+        },
+        error: function(xhr, status, error) {
+          return app.helpers.errorDialog("Problem getting checkin information from " + _this.urlBase + ". Reason: " + error + ".");
+        }
+      });
+    };
+
+    return Stations;
+
+  })(Collection);
+
+  module.exports = Stations;
 
 }).call(this);
 
@@ -296,8 +396,7 @@
 (this.require.define({
   "lib/helpers": function(exports, require, module) {
     (function() {
-  var app, helpers,
-    _this = this;
+  var app, helpers;
 
   app = require('../application');
 
@@ -333,6 +432,14 @@
         if (hours === 0) hours = 12;
       }
       return "" + hours + ":" + minutes + AmPm;
+    },
+    getRandomElement: function(anArray) {
+      var length;
+      length = anArray.length;
+      return anArray[Math.floor(Math.random() * anArray.length)];
+    },
+    metersToFeet: function(meters) {
+      return meters * 3.280839895;
     }
   };
 
@@ -363,7 +470,6 @@
   "lib/router": function(exports, require, module) {
     (function() {
   var AppRouter, app,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
@@ -374,22 +480,29 @@
     __extends(AppRouter, _super);
 
     function AppRouter() {
-      this.map = __bind(this.map, this);
-      this.home = __bind(this.home, this);
       AppRouter.__super__.constructor.apply(this, arguments);
     }
 
     AppRouter.prototype.routes = {
-      "/*": "home",
-      "/map": "map"
+      "/map": "map",
+      "/checkin": "checkIn",
+      "/home": "home",
+      "/*": "home"
     };
 
     AppRouter.prototype.home = function() {
+      app.showHomeView();
       return app.views.homeView.render();
     };
 
     AppRouter.prototype.map = function() {
+      app.showMapView();
       return app.views.mapView.render();
+    };
+
+    AppRouter.prototype.checkIn = function() {
+      app.showCheckInView();
+      return app.views.checkInView.render();
     };
 
     return AppRouter;
@@ -515,33 +628,98 @@
 (this.require.define({
   "models/stop": function(exports, require, module) {
     (function() {
-  var Model, Stop,
+  var CheckIn, Model,
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
   Model = require('./model');
 
-  Stop = (function(_super) {
+  CheckIn = (function(_super) {
 
-    __extends(Stop, _super);
+    __extends(CheckIn, _super);
 
-    function Stop() {
-      Stop.__super__.constructor.apply(this, arguments);
+    function CheckIn() {
+      CheckIn.__super__.constructor.apply(this, arguments);
     }
 
-    Stop.prototype.time = 0;
+    CheckIn.prototype.time = 0;
 
-    Stop.prototype.isStop = true;
+    CheckIn.prototype.isCheckIn = true;
 
-    Stop.prototype.name = "";
+    CheckIn.prototype.name = "";
 
-    Stop.prototype.direction = "";
+    CheckIn.prototype.direction = "";
 
-    return Stop;
+    CheckIn.prototype.latitude = 0;
+
+    CheckIn.prototype.longitude = 0;
+
+    CheckIn.prototype.id = 0;
+
+    return CheckIn;
 
   })(Model);
 
-  module.exports = Stop;
+  module.exports = CheckIn;
+
+}).call(this);
+
+  }
+}));
+(this.require.define({
+  "views/checkInView": function(exports, require, module) {
+    (function() {
+  var CheckInView, View, app, helpers, template,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+  View = require('./view');
+
+  app = require('../application');
+
+  template = require('./templates/checkInViewTemplate');
+
+  helpers = require('../lib/helpers');
+
+  CheckInView = (function(_super) {
+
+    __extends(CheckInView, _super);
+
+    function CheckInView() {
+      this.getThankYou = __bind(this.getThankYou, this);
+      this.getRenderData = __bind(this.getRenderData, this);
+      CheckInView.__super__.constructor.apply(this, arguments);
+    }
+
+    CheckInView.prototype.isCheckIn = true;
+
+    CheckInView.prototype.el = "#check-in-view-container";
+
+    CheckInView.prototype.template = template;
+
+    CheckInView.prototype.please = "Please help us Find the Green Line. Your fellow Bostonians and Green Line riders will thank you.";
+
+    CheckInView.prototype.thankYou = ["Running late, no surprise there.  Now everybody else knows though. Thanks!!", "Classic Green Line, just being wherever it wants, whenever it wants. Thanks for the heads up!"];
+
+    CheckInView.prototype.getRenderData = function() {
+      return {
+        checkin: {
+          please: this.please,
+          thankYou: this.getThankYou()
+        }
+      };
+    };
+
+    CheckInView.prototype.getThankYou = function() {
+      return helpers.getRandomElement(this.thankYou);
+    };
+
+    return CheckInView;
+
+  })(View);
+
+  module.exports = CheckInView;
 
 }).call(this);
 
@@ -578,6 +756,8 @@
 
     HomeView.prototype.template = template;
 
+    HomeView.prototype.isHeader = true;
+
     HomeView.prototype.initialize = function() {
       return $(window).resize(this.resizeHeader);
     };
@@ -604,6 +784,7 @@
   "views/homeView": function(exports, require, module) {
     (function() {
   var HomeView, View, app, helpers, template,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
@@ -620,12 +801,19 @@
     __extends(HomeView, _super);
 
     function HomeView() {
+      this.afterRender = __bind(this.afterRender, this);
       HomeView.__super__.constructor.apply(this, arguments);
     }
+
+    HomeView.prototype.isHome = true;
 
     HomeView.prototype.el = "#home-view-container";
 
     HomeView.prototype.template = template;
+
+    HomeView.prototype.afterRender = function() {
+      return this.isCurrent = true;
+    };
 
     return HomeView;
 
@@ -676,6 +864,8 @@
       MapView.__super__.constructor.apply(this, arguments);
     }
 
+    MapView.prototype.isMap = true;
+
     MapView.prototype.el = "#map-view-container";
 
     MapView.prototype.mapId = "map-container";
@@ -714,6 +904,7 @@
     };
 
     MapView.prototype.locationCallback = function(location) {
+      app.newLocation(location);
       this.location = location;
       this.mapOptions.center = new google.maps.LatLng(location.coords.latitude, location.coords.longitude);
       this.marker = new google.maps.Marker({
@@ -798,13 +989,30 @@
   }
 }));
 (this.require.define({
+  "views/templates/checkInViewTemplate": function(exports, require, module) {
+    module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
+  helpers = helpers || Handlebars.helpers;
+  var buffer = "", stack1, foundHelper, self=this, functionType="function", helperMissing=helpers.helperMissing, undef=void 0, escapeExpression=this.escapeExpression;
+
+
+  buffer += "<div class=\"check-in-copy\">";
+  foundHelper = helpers.checkin;
+  stack1 = foundHelper || depth0.checkin;
+  stack1 = (stack1 === null || stack1 === undefined || stack1 === false ? stack1 : stack1.please);
+  if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
+  else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "checkin.please", { hash: {} }); }
+  buffer += escapeExpression(stack1) + "</div>\n<div id=\"hs_field_wrapper_select\" class=\"field  \">\n    <label for=\"basic_form_id_select\">\n        Line\n    </label>\n    <div class=\"input line-select\">\n        <select name=\"select\" required=\"required\" id=\"basic_form_id_select\" class=\"hs-input\">\n        		<option value=\"A\">\n               Trunk\n            </option>\n            <option value=\"B\">\n               B Line\n            </option>\n            <option value=\"C\">\n                C Line\n            </option>\n            <option value=\"D\">\n                D Line\n            </option>\n            <option value=\"E\">\n                E Line\n            </option>\n        </select>\n    </div>\n</div>\n<div id=\"hs_field_wrapper_select\" class=\"field\">\n    <label for=\"basic_form_id_select\">\n        Station\n    </label>\n    <div class=\"input station-select\">\n        <select name=\"select\" required=\"required\" id=\"basic_form_id_select\" class=\"hs-input\">\n        	<option value=\"Lechmere\">\n               Lechmere\n            </option>\n            <option value=\"Science Park\">\n               Science Park\n            </option>\n        		<option value=\"North\">\n               North Station\n            </option>\n            <option value=\"Haymarket\">\n               Haymarket\n            </option>\n            <option value=\"Government Center\">\n                Government Center\n            </option>\n            <option value=\"Park St.\">\n                Park St.\n            </option>\n            <option value=\"Boylston\">\n            	Boylston\n            </option>\n            <option value=\"Arlington\">\n            	Arlington\n            </option>\n            <option value=\"Copley\">\n            	Copley\n            </option>\n            <option value=\"Prudential\">\n            	Prudential\n            </option>\n            <option value=\"Symphony\">\n            	Symphony\n            </option>\n            <option value=\"Northeastern University\">\n            	Northeastern University\n            </option>\n            <option value=\"Museum of Fine Arts\">\n            	Museum of Fine Arts\n            </option>\n            <option value=\"Longwood Medical Area\">\n            	Longwood Medical Area\n            </option>\n            <option value=\"Brigham Circle\">\n            	Brigham Circle\n            </option>\n            <option value=\"Fenwood Rd.\">\n            	Fenwood Rd.\n            </option>\n            <option value=\"Mission Park\">\n            	Mission Park\n            </option>\n            <option value=\"Riverway\">\n            	Riverway\n            </option>\n            <option value=\"Back of the Hill\">\n            	Back of the Hill\n            </option>\n            <option value=\"Heath St.\">\n            	Heath St.\n            </option>\n        </select>\n    </div>\n</div>\n<div id=\"hs_field_wrapper_select\" class=\"field  \">\n    <label for=\"basic_form_id_select\">\n        Direction\n    </label>\n    <div class=\"input direction-select\">\n        <select name=\"select\" required=\"required\" id=\"basic_form_id_select\" class=\"hs-input\">\n        		<option value=\"Lechmere\">\n        			East Towards Lechmere\n            </option>\n            <option value=\"Heath St.\">\n               West Towards Heath St.\n            </option>\n        </select>\n    </div>\n</div>\n<div class=\"submit-check-in-button center\"> <button class=\"hs-button large green\">Submit Check In</button></div>";
+  return buffer;});
+  }
+}));
+(this.require.define({
   "views/templates/headerViewTemplate": function(exports, require, module) {
     module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
   helpers = helpers || Handlebars.helpers;
   var foundHelper, self=this;
 
 
-  return "<div class=\"center header-banner\">\n	<span>Find The Green Line</span>\n</div>";});
+  return "<div class=\"center header-banner\">\n	<span><Strong>Find The Green Line</Strong></span>\n</div>";});
   }
 }));
 (this.require.define({
@@ -857,11 +1065,13 @@
     View.prototype.afterRender = function() {};
 
     View.prototype.hide = function() {
-      return $(this.el)._hide();
+      this.current = false;
+      return $(this.el).hide();
     };
 
     View.prototype.show = function() {
-      return $(this.el)._show();
+      this.current = true;
+      return $(this.el).show();
     };
 
     return View;

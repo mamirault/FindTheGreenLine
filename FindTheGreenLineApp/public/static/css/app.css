@@ -4566,8 +4566,10 @@ a.thumbnail:hover {
 .center{margin:0 auto}
 body{background-color:#000;color:#fff;height:100%}
 html{height:98%;width:98%;margin:1%}
-#header-view-container{width:100%}
-.header-banner{width:100%}
+.line-select,.station-select,.direction-select{display:inline-block}
+label{display:inline-block;width:55px}
+#header-view-container{width:100%;color:#008000}
+.header-banner{width:90%}
 #home-view-container{width:100%}
 .big-button{float:left;width:70%}
 #map-view-container{min-height:360px;height:auto}

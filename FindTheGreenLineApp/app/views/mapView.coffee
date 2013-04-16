@@ -8,6 +8,7 @@ Stations = require '../collections/stations'
 Icons    = require '../lib/icons'
 
 class MapView extends View
+  isMap      : true
   el         : "#map-view-container"
   mapId      : "map-container"
   template   : template
@@ -37,6 +38,7 @@ class MapView extends View
     @renderStations()
 
   locationCallback: (location) =>
+    app.newLocation location
     @location = location
     @mapOptions.center = new google.maps.LatLng location.coords.latitude, location.coords.longitude
     @marker = new google.maps.Marker
@@ -86,5 +88,7 @@ class MapView extends View
     google.maps.event.addListener @markers[name], 'click', () =>
       @infoWindow.setContent content
       @infoWindow.open @map, @markers[name]
+
+
 
 module.exports = MapView

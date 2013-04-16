@@ -15,7 +15,7 @@ helpers =
         "font-size" : newFontSize
         "line-height" : newFontSize/1.2 + "px"
 
-  convertToTimeString: (date) =>
+  convertToTimeString: (date) ->
     minutes = date.getMinutes()
     if minutes.toString().length == 1
       minutes = "0#{minutes}"
@@ -29,5 +29,12 @@ helpers =
         hours = 12
 
     "#{hours}:#{minutes}#{AmPm}"
+
+  getRandomElement: (anArray) ->
+    length = anArray.length
+    anArray[Math.floor(Math.random() * anArray.length)]
+
+  metersToFeet: (meters) ->
+    meters * 3.280839895
 
 module.exports = helpers
