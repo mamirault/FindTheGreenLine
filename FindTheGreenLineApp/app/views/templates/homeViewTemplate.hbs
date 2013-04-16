@@ -1,10 +1,20 @@
-<div>
-	<div class="home-view-full-button">
-		<span>Are you on the T?</span>
-		<a class="big-button hs-button primary large green">Check In</a>
+{{#if home}}
+	<div class="waiting center needs-bottom">
+		<div>
+			<span><h4>We calculated that you are {{home.distance}}ft from {{home.name}} Station.  		Are you waiting for a train there?</h4>
+			</span>
+		</div>
+		<a class="waiting-button hs-button primary large green inline" href="#/checkin/E/{{home.name}}">Yes</a>
+		<a href="#/map" class="waiting-button hs-button primary large red inline">No </a>
 	</div>
-	<div>
-		<span>Waiting?</span>
-		<a href="#/map" class="hs-button primary large big-button">Map</a>
+{{/if}}
+<div class="center needs-top-margin">
+	<div class="home-view-full-button">
+		<h4><span class="inline">Currently on the T? Spread your knowledge and check in! The world will become a better place.</span></h4>
+		<a href="#/checkin" class="big-button hs-button primary large green inline">Check In</a>
+	</div>
+	<div class="needs-top-margin">
+		<h4><span class="inline">Waiting for the T? We're not surprised, so are we. Check the map out here.</span></h4>
+		<a href="#/map" class="hs-button primary large big-button inline">Map</a>
 	</div>
 </div>

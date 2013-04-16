@@ -12,6 +12,7 @@ class Stations extends Collection
       type: 'GET'
       dataType: 'json'
       success: (data, textStatus, jqHXR) => 
+        console.log "CHECKIN DATA"
         @reset @parse data
         callback()
       error: (xhr, status, error) => 

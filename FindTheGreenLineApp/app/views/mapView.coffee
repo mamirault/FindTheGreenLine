@@ -18,6 +18,9 @@ class MapView extends View
   infoWindow : new google.maps.InfoWindow()
   markers    : {}
   infoWindowContent : {}
+  events: 
+      'click #map-to-check-in': 'toCheckIn'
+      'click #map-to-home' : 'toHome'
 
   initialize: =>
     @location = new Location @locationCallback, false
@@ -27,6 +30,7 @@ class MapView extends View
       mapTypeId : google.maps.MapTypeId.ROADMAP
     @stops.fetch @createInfoWindowContent, true
     @stations.fetch @render
+
 
   afterRender: =>
     @map = new google.maps.Map document.getElementById(@mapId), @mapOptions
@@ -89,6 +93,10 @@ class MapView extends View
       @infoWindow.setContent content
       @infoWindow.open @map, @markers[name]
 
+  toHome: () =>
+    helpers.toHome()
 
+  toCheckIn: () =>
+    helpers.toCheckIn()
 
 module.exports = MapView

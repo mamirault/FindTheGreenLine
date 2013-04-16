@@ -44,6 +44,8 @@
     @Timed
     @Path("/closest")
     public String getClosest(@QueryParam("latitude") double latitude, @QueryParam("longitude") double longitude) {
+      System.out.println(latitude);
+      System.out.println(longitude);
       Station closest = Station.LECHMERE;
       double minDistance = Double.MAX_VALUE;
   
@@ -51,9 +53,11 @@
         double distance = Haversine.calculate(latitude, longitude, station.getLatitude(), station.getLongitude());
         if (distance < minDistance) {
           closest = station;
+          minDistance = distance;
         }
       }
   
+        minDistance = Math.round(minDistance * 3280.8);
       return new JsonGeneratorWrapper().startObject().string("name", closest.name).number("distance", minDistance).endObject().asString();
     }
   }

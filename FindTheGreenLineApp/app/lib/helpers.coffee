@@ -37,4 +37,16 @@ helpers =
   metersToFeet: (meters) ->
     meters * 3.280839895
 
+  toMap: () ->
+    window.location.href="#/map"
+
+  toCheckIn: () ->
+    window.location.href="#/checkin"
+
+  toHome: () ->
+    window.location.href=""
+
+  toThanks: () ->
+    window.location.href="#/thanks"
+
 module.exports = helpers

@@ -86,17 +86,19 @@
 
   application = {
     initialize: function(env, onSuccess) {
-      var AppRouter, CheckInView, HeaderView, HomeView, MapView;
+      var AppRouter, CheckInView, HeaderView, HomeView, MapView, ThanksView;
       this.env = env;
       HomeView = require('/views/homeView');
       MapView = require('/views/mapView');
       HeaderView = require('/views/headerView');
       CheckInView = require('/views/checkInView');
+      ThanksView = require('/views/thanksView');
       this.views = {
         homeView: new HomeView(),
         mapView: new MapView(),
         headerView: new HeaderView(),
-        checkInView: new CheckInView()
+        checkInView: new CheckInView(),
+        thanksView: new ThanksView()
       };
       AppRouter = require('lib/router');
       this.router = new AppRouter({
@@ -146,8 +148,24 @@
       }
       return _results;
     },
+    showThanksView: function() {
+      var view, viewName, _results;
+      _results = [];
+      for (viewName in app.views) {
+        view = app.views[viewName];
+        if (view.isThanks || view.isHeader) {
+          view.render();
+          _results.push(view.show());
+        } else {
+          _results.push(view.hide());
+        }
+      }
+      return _results;
+    },
     newLocation: function(location) {
-      if (homeView.isCurrent) return homeView.prompt(location);
+      if (app.views.homeView.isCurrent) {
+        return app.views.homeView.getClosest(location);
+      }
     }
   };
 
@@ -191,6 +209,7 @@
         type: 'GET',
         dataType: 'json',
         success: function(data, textStatus, jqHXR) {
+          console.log("CHECKIN DATA");
           _this.reset(_this.parse(data));
           return callback();
         },
@@ -440,6 +459,18 @@
     },
     metersToFeet: function(meters) {
       return meters * 3.280839895;
+    },
+    toMap: function() {
+      return window.location.href = "#/map";
+    },
+    toCheckIn: function() {
+      return window.location.href = "#/checkin";
+    },
+    toHome: function() {
+      return window.location.href = "";
+    },
+    toThanks: function() {
+      return window.location.href = "#/thanks";
     }
   };
 
@@ -484,8 +515,10 @@
     }
 
     AppRouter.prototype.routes = {
+      "/thanks": "thanks",
       "/map": "map",
       "/checkin": "checkIn",
+      "/checkin/:line/:station": "checkInStation",
       "/home": "home",
       "/*": "home"
     };
@@ -505,11 +538,56 @@
       return app.views.checkInView.render();
     };
 
+    AppRouter.prototype.checkInStation = function(line, station) {
+      app.showCheckInView();
+      return app.views.checkInView.setRenderData(line, station);
+    };
+
+    AppRouter.prototype.thanks = function() {
+      app.showThanksView();
+      return app.views.thanksView.render();
+    };
+
     return AppRouter;
 
   })(Backbone.Router);
 
   module.exports = AppRouter;
+
+}).call(this);
+
+  }
+}));
+(this.require.define({
+  "models/checkIn": function(exports, require, module) {
+    (function() {
+  var CheckIn, Model,
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+  Model = require('./model');
+
+  CheckIn = (function(_super) {
+
+    __extends(CheckIn, _super);
+
+    CheckIn.prototype.time = 0;
+
+    CheckIn.prototype.isStop = true;
+
+    CheckIn.prototype.name = "";
+
+    CheckIn.prototype.direction = "";
+
+    function CheckIn() {
+      console.log("I've been constructed because I'm a model");
+    }
+
+    return CheckIn;
+
+  })(Model);
+
+  module.exports = CheckIn;
 
 }).call(this);
 
@@ -628,39 +706,33 @@
 (this.require.define({
   "models/stop": function(exports, require, module) {
     (function() {
-  var CheckIn, Model,
+  var Model, Stop,
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
   Model = require('./model');
 
-  CheckIn = (function(_super) {
+  Stop = (function(_super) {
 
-    __extends(CheckIn, _super);
+    __extends(Stop, _super);
 
-    function CheckIn() {
-      CheckIn.__super__.constructor.apply(this, arguments);
+    function Stop() {
+      Stop.__super__.constructor.apply(this, arguments);
     }
 
-    CheckIn.prototype.time = 0;
+    Stop.prototype.time = 0;
 
-    CheckIn.prototype.isCheckIn = true;
+    Stop.prototype.isStop = true;
 
-    CheckIn.prototype.name = "";
+    Stop.prototype.name = "";
 
-    CheckIn.prototype.direction = "";
+    Stop.prototype.direction = "";
 
-    CheckIn.prototype.latitude = 0;
-
-    CheckIn.prototype.longitude = 0;
-
-    CheckIn.prototype.id = 0;
-
-    return CheckIn;
+    return Stop;
 
   })(Model);
 
-  module.exports = CheckIn;
+  module.exports = Stop;
 
 }).call(this);
 
@@ -687,8 +759,13 @@
     __extends(CheckInView, _super);
 
     function CheckInView() {
+      this.toThanks = __bind(this.toThanks, this);
+      this.toMap = __bind(this.toMap, this);
       this.getThankYou = __bind(this.getThankYou, this);
+      this.afterRender = __bind(this.afterRender, this);
       this.getRenderData = __bind(this.getRenderData, this);
+      this.setRenderData = __bind(this.setRenderData, this);
+      this.render = __bind(this.render, this);
       CheckInView.__super__.constructor.apply(this, arguments);
     }
 
@@ -702,6 +779,26 @@
 
     CheckInView.prototype.thankYou = ["Running late, no surprise there.  Now everybody else knows though. Thanks!!", "Classic Green Line, just being wherever it wants, whenever it wants. Thanks for the heads up!"];
 
+    CheckInView.prototype.events = {
+      'click #check-in-to-map': 'toMap',
+      'click #check-in-to-thanks': 'toThanks'
+    };
+
+    CheckInView.prototype.render = function() {
+      this.renderData = {};
+      $(this.el).html(this.template(this.getRenderData()));
+      this.afterRender();
+      return this;
+    };
+
+    CheckInView.prototype.setRenderData = function(line, name) {
+      this.renderData = {
+        line: line,
+        name: name
+      };
+      return this.afterRender();
+    };
+
     CheckInView.prototype.getRenderData = function() {
       return {
         checkin: {
@@ -711,8 +808,21 @@
       };
     };
 
+    CheckInView.prototype.afterRender = function() {
+      $("#station-select").val(this.renderData.name);
+      return $("#line-select").val(this.renderData.line);
+    };
+
     CheckInView.prototype.getThankYou = function() {
       return helpers.getRandomElement(this.thankYou);
+    };
+
+    CheckInView.prototype.toMap = function() {
+      return helpers.toMap();
+    };
+
+    CheckInView.prototype.toThanks = function() {
+      return helpers.toThanks();
     };
 
     return CheckInView;
@@ -801,6 +911,8 @@
     __extends(HomeView, _super);
 
     function HomeView() {
+      this.getRenderData = __bind(this.getRenderData, this);
+      this.getClosest = __bind(this.getClosest, this);
       this.afterRender = __bind(this.afterRender, this);
       HomeView.__super__.constructor.apply(this, arguments);
     }
@@ -811,8 +923,41 @@
 
     HomeView.prototype.template = template;
 
+    HomeView.prototype.urlBase = "" + app.env.API_BASE + "/stations/closest";
+
     HomeView.prototype.afterRender = function() {
-      return this.isCurrent = true;
+      this.isCurrent = true;
+      return helpers.resizeText("waiting", 12);
+    };
+
+    HomeView.prototype.getClosest = function(location) {
+      var _this = this;
+      return $.ajax({
+        url: "" + this.urlBase + "?latitude=" + location.coords.latitude + "&longitude=" + location.coords.longitude,
+        type: 'GET',
+        dataType: 'json',
+        success: function(data, textStatus, jqHXR) {
+          if (data.distance < 1000) {
+            _this.closest = data;
+            return _this.render();
+          } else {
+            return "";
+          }
+        },
+        error: function(xhr, status, error) {
+          return "";
+        }
+      });
+    };
+
+    HomeView.prototype.getRenderData = function() {
+      if (this.closest) {
+        return {
+          home: this.closest
+        };
+      } else {
+        return {};
+      }
     };
 
     return HomeView;
@@ -854,6 +999,8 @@
     __extends(MapView, _super);
 
     function MapView() {
+      this.toCheckIn = __bind(this.toCheckIn, this);
+      this.toHome = __bind(this.toHome, this);
       this.createMarker = __bind(this.createMarker, this);
       this.renderStations = __bind(this.renderStations, this);
       this.getContentFromName = __bind(this.getContentFromName, this);
@@ -883,6 +1030,11 @@
     MapView.prototype.markers = {};
 
     MapView.prototype.infoWindowContent = {};
+
+    MapView.prototype.events = {
+      'click #map-to-check-in': 'toCheckIn',
+      'click #map-to-home': 'toHome'
+    };
 
     MapView.prototype.initialize = function() {
       this.location = new Location(this.locationCallback, false);
@@ -978,6 +1130,14 @@
       });
     };
 
+    MapView.prototype.toHome = function() {
+      return helpers.toHome();
+    };
+
+    MapView.prototype.toCheckIn = function() {
+      return helpers.toCheckIn();
+    };
+
     return MapView;
 
   })(View);
@@ -1001,7 +1161,7 @@
   stack1 = (stack1 === null || stack1 === undefined || stack1 === false ? stack1 : stack1.please);
   if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
   else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "checkin.please", { hash: {} }); }
-  buffer += escapeExpression(stack1) + "</div>\n<div id=\"hs_field_wrapper_select\" class=\"field  \">\n    <label for=\"basic_form_id_select\">\n        Line\n    </label>\n    <div class=\"input line-select\">\n        <select name=\"select\" required=\"required\" id=\"basic_form_id_select\" class=\"hs-input\">\n        		<option value=\"A\">\n               Trunk\n            </option>\n            <option value=\"B\">\n               B Line\n            </option>\n            <option value=\"C\">\n                C Line\n            </option>\n            <option value=\"D\">\n                D Line\n            </option>\n            <option value=\"E\">\n                E Line\n            </option>\n        </select>\n    </div>\n</div>\n<div id=\"hs_field_wrapper_select\" class=\"field\">\n    <label for=\"basic_form_id_select\">\n        Station\n    </label>\n    <div class=\"input station-select\">\n        <select name=\"select\" required=\"required\" id=\"basic_form_id_select\" class=\"hs-input\">\n        	<option value=\"Lechmere\">\n               Lechmere\n            </option>\n            <option value=\"Science Park\">\n               Science Park\n            </option>\n        		<option value=\"North\">\n               North Station\n            </option>\n            <option value=\"Haymarket\">\n               Haymarket\n            </option>\n            <option value=\"Government Center\">\n                Government Center\n            </option>\n            <option value=\"Park St.\">\n                Park St.\n            </option>\n            <option value=\"Boylston\">\n            	Boylston\n            </option>\n            <option value=\"Arlington\">\n            	Arlington\n            </option>\n            <option value=\"Copley\">\n            	Copley\n            </option>\n            <option value=\"Prudential\">\n            	Prudential\n            </option>\n            <option value=\"Symphony\">\n            	Symphony\n            </option>\n            <option value=\"Northeastern University\">\n            	Northeastern University\n            </option>\n            <option value=\"Museum of Fine Arts\">\n            	Museum of Fine Arts\n            </option>\n            <option value=\"Longwood Medical Area\">\n            	Longwood Medical Area\n            </option>\n            <option value=\"Brigham Circle\">\n            	Brigham Circle\n            </option>\n            <option value=\"Fenwood Rd.\">\n            	Fenwood Rd.\n            </option>\n            <option value=\"Mission Park\">\n            	Mission Park\n            </option>\n            <option value=\"Riverway\">\n            	Riverway\n            </option>\n            <option value=\"Back of the Hill\">\n            	Back of the Hill\n            </option>\n            <option value=\"Heath St.\">\n            	Heath St.\n            </option>\n        </select>\n    </div>\n</div>\n<div id=\"hs_field_wrapper_select\" class=\"field  \">\n    <label for=\"basic_form_id_select\">\n        Direction\n    </label>\n    <div class=\"input direction-select\">\n        <select name=\"select\" required=\"required\" id=\"basic_form_id_select\" class=\"hs-input\">\n        		<option value=\"Lechmere\">\n        			East Towards Lechmere\n            </option>\n            <option value=\"Heath St.\">\n               West Towards Heath St.\n            </option>\n        </select>\n    </div>\n</div>\n<div class=\"submit-check-in-button center\"> <button class=\"hs-button large green\">Submit Check In</button></div>";
+  buffer += escapeExpression(stack1) + "</div>\n<div id=\"hs_field_wrapper_select\" class=\"field  \">\n    <label for=\"basic_form_id_select\">\n        Line\n    </label>\n    <div class=\"input line-select\">\n        <select name=\"select\" required=\"required\" id=\"line-select\" class=\"hs-input\">\n        		<option value=\"A\">\n               Trunk\n            </option>\n            <option value=\"B\">\n               B Line\n            </option>\n            <option value=\"C\">\n                C Line\n            </option>\n            <option value=\"D\">\n                D Line\n            </option>\n            <option value=\"E\">\n                E Line\n            </option>\n        </select>\n    </div>\n</div>\n<div id=\"hs_field_wrapper_select\" class=\"field\">\n    <label for=\"basic_form_id_select\">\n        Station\n    </label>\n    <div class=\"input station-select\">\n        <select name=\"select\" required=\"required\" id=\"station-select\" class=\"hs-input\">\n        	<option value=\"Lechmere\">\n               Lechmere\n            </option>\n            <option value=\"Science Park\">\n               Science Park\n            </option>\n        		<option value=\"North\">\n               North Station\n            </option>\n            <option value=\"Haymarket\">\n               Haymarket\n            </option>\n            <option value=\"Government Center\">\n                Government Center\n            </option>\n            <option value=\"Park St.\">\n                Park St.\n            </option>\n            <option value=\"Boylston\">\n            	Boylston\n            </option>\n            <option value=\"Arlington\">\n            	Arlington\n            </option>\n            <option value=\"Copley\">\n            	Copley\n            </option>\n            <option value=\"Prudential\">\n            	Prudential\n            </option>\n            <option value=\"Symphony\">\n            	Symphony\n            </option>\n            <option value=\"Northeastern University\">\n            	Northeastern University\n            </option>\n            <option value=\"Museum of Fine Arts\">\n            	Museum of Fine Arts\n            </option>\n            <option value=\"Longwood Medical Area\">\n            	Longwood Medical Area\n            </option>\n            <option value=\"Brigham Circle\">\n            	Brigham Circle\n            </option>\n            <option value=\"Fenwood Rd.\">\n            	Fenwood Rd.\n            </option>\n            <option value=\"Mission Park\">\n            	Mission Park\n            </option>\n            <option value=\"Riverway\">\n            	Riverway\n            </option>\n            <option value=\"Back of the Hill\">\n            	Back of the Hill\n            </option>\n            <option value=\"Heath St.\">\n            	Heath St.\n            </option>\n        </select>\n    </div>\n</div>\n<div id=\"hs_field_wrapper_select\" class=\"field  \">\n    <label for=\"basic_form_id_select\">\n        Direction\n    </label>\n    <div class=\"input direction-select\">\n        <select name=\"select\" required=\"required\" id=\"basic_form_id_select\" class=\"hs-input\">\n        		<option value=\"Lechmere\">\n        			East Towards Lechmere\n            </option>\n            <option value=\"Heath St.\">\n               West Towards Heath St.\n            </option>\n        </select>\n    </div>\n</div>\n<div class=\"submit-check-in-button center\"> <button id=\"check-in-to-thanks\" class=\"hs-button large green\">Submit Check In</button> <button id=\"check-in-to-map\" class=\"hs-button large red\">Back to Map</button></div>";
   return buffer;});
   }
 }));
@@ -1012,17 +1172,50 @@
   var foundHelper, self=this;
 
 
-  return "<div class=\"center header-banner\">\n	<span><Strong>Find The Green Line</Strong></span>\n</div>";});
+  return "<div class=\"center header-banner\">\n	<span><Strong> Find The Green Line</Strong></span>\n</div>";});
   }
 }));
 (this.require.define({
   "views/templates/homeViewTemplate": function(exports, require, module) {
     module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
   helpers = helpers || Handlebars.helpers;
-  var foundHelper, self=this;
+  var buffer = "", stack1, stack2, foundHelper, tmp1, self=this, functionType="function", helperMissing=helpers.helperMissing, undef=void 0, escapeExpression=this.escapeExpression;
 
+function program1(depth0,data) {
+  
+  var buffer = "", stack1;
+  buffer += "\n	<div class=\"waiting center needs-bottom\">\n		<div>\n			<span><h4>We calculated that you are ";
+  foundHelper = helpers.home;
+  stack1 = foundHelper || depth0.home;
+  stack1 = (stack1 === null || stack1 === undefined || stack1 === false ? stack1 : stack1.distance);
+  if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
+  else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "home.distance", { hash: {} }); }
+  buffer += escapeExpression(stack1) + "ft from ";
+  foundHelper = helpers.home;
+  stack1 = foundHelper || depth0.home;
+  stack1 = (stack1 === null || stack1 === undefined || stack1 === false ? stack1 : stack1.name);
+  if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
+  else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "home.name", { hash: {} }); }
+  buffer += escapeExpression(stack1) + " Station.  		Are you waiting for a train there?</h4>\n			</span>\n		</div>\n		<a class=\"waiting-button hs-button primary large green inline\" href=\"#/checkin/E/";
+  foundHelper = helpers.home;
+  stack1 = foundHelper || depth0.home;
+  stack1 = (stack1 === null || stack1 === undefined || stack1 === false ? stack1 : stack1.name);
+  if(typeof stack1 === functionType) { stack1 = stack1.call(depth0, { hash: {} }); }
+  else if(stack1=== undef) { stack1 = helperMissing.call(depth0, "home.name", { hash: {} }); }
+  buffer += escapeExpression(stack1) + "\">Yes</a>\n		<a href=\"#/map\" class=\"waiting-button hs-button primary large red inline\">No </a>\n	</div>\n";
+  return buffer;}
 
-  return "<div>\n	<div class=\"home-view-full-button\">\n		<span>Are you on the T?</span>\n		<a class=\"big-button hs-button primary large green\">Check In</a>\n	</div>\n	<div>\n		<span>Waiting?</span>\n		<a href=\"#/map\" class=\"hs-button primary large big-button\">Map</a>\n	</div>\n</div>";});
+  foundHelper = helpers.home;
+  stack1 = foundHelper || depth0.home;
+  stack2 = helpers['if'];
+  tmp1 = self.program(1, program1, data);
+  tmp1.hash = {};
+  tmp1.fn = tmp1;
+  tmp1.inverse = self.noop;
+  stack1 = stack2.call(depth0, stack1, tmp1);
+  if(stack1 || stack1 === 0) { buffer += stack1; }
+  buffer += "\n<div class=\"center needs-top-margin\">\n	<div class=\"home-view-full-button\">\n		<h4><span class=\"inline\">Currently on the T? Spread your knowledge and check in! The world will become a better place.</span></h4>\n		<a href=\"#/checkin\" class=\"big-button hs-button primary large green inline\">Check In</a>\n	</div>\n	<div class=\"needs-top-margin\">\n		<h4><span class=\"inline\">Waiting for the T? We're not surprised, so are we. Check the map out here.</span></h4>\n		<a href=\"#/map\" class=\"hs-button primary large big-button inline\">Map</a>\n	</div>\n</div>";
+  return buffer;});
   }
 }));
 (this.require.define({
@@ -1032,7 +1225,72 @@
   var foundHelper, self=this;
 
 
-  return "<div id=\"map-container\"></div>";});
+  return "<div id=\"map-container\"></div>\n<div class=\"submit-check-in-button center\"> <button id=\"map-to-check-in\" class=\"hs-button large green\">Submit Check In</button> <button id= \"map-to-home\" class=\"hs-button large red\">Back to Home</button></div>";});
+  }
+}));
+(this.require.define({
+  "views/templates/thanksViewTemplate": function(exports, require, module) {
+    module.exports = Handlebars.template(function (Handlebars,depth0,helpers,partials,data) {
+  helpers = helpers || Handlebars.helpers;
+  var foundHelper, self=this;
+
+
+  return "<div><span><h4>Thanks</h3></span></div>\n<div class=\"center\"> <button id=\"thanks-to-home\" class=\"hs-button large green\">Back to Home</button> <button id=\"thanks-to-map\" class=\"hs-button large red\">Back to Map</button></div>";});
+  }
+}));
+(this.require.define({
+  "views/thanksView": function(exports, require, module) {
+    (function() {
+  var ThanksView, View, app, helpers, template,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = Object.prototype.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+  View = require('./view');
+
+  app = require('../application');
+
+  template = require('./templates/thanksViewTemplate');
+
+  helpers = require('../lib/helpers');
+
+  ThanksView = (function(_super) {
+
+    __extends(ThanksView, _super);
+
+    function ThanksView() {
+      this.toHome = __bind(this.toHome, this);
+      this.toCheckIn = __bind(this.toCheckIn, this);
+      ThanksView.__super__.constructor.apply(this, arguments);
+    }
+
+    ThanksView.prototype.isThanks = true;
+
+    ThanksView.prototype.el = "#thanks-view-container";
+
+    ThanksView.prototype.template = template;
+
+    ThanksView.prototype.events = {
+      'click #thanks-to-check-in': 'toCheckIn',
+      'click #thanks-to-home': 'toHome'
+    };
+
+    ThanksView.prototype.toCheckIn = function() {
+      return helpers.toCheckIn();
+    };
+
+    ThanksView.prototype.toHome = function() {
+      return helpers.toHome();
+    };
+
+    return ThanksView;
+
+  })(View);
+
+  module.exports = ThanksView;
+
+}).call(this);
+
   }
 }));
 (this.require.define({
