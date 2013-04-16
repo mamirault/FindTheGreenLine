@@ -245,7 +245,7 @@
   var constants;
 
   constants = {
-    API_BASE: 'http://localhost:8080'
+    API_BASE: 'http://api.findthegreenline.com'
   };
 
   module.exports = constants;
