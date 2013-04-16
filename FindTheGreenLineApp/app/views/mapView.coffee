@@ -5,7 +5,7 @@ helpers  = require '../lib/helpers'
 Location = require '../models/location'
 Stops    = require '../collections/stops'
 Stations = require '../collections/stations'
-CheckIngs = require '../collections/checkIns'
+CheckIns = require '../collections/checkIns'
 Icons    = require '../lib/icons'
 
 class MapView extends View

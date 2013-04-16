@@ -176,7 +176,7 @@
   }
 }));
 (this.require.define({
-  "collections/checkins": function(exports, require, module) {
+  "collections/checkIns": function(exports, require, module) {
     (function() {
   var CheckIn, Collection, Stations, app,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
@@ -991,7 +991,7 @@
 (this.require.define({
   "views/mapView": function(exports, require, module) {
     (function() {
-  var CheckIngs, Icons, Location, MapView, Stations, Stops, View, app, helpers, template,
+  var CheckIns, Icons, Location, MapView, Stations, Stops, View, app, helpers, template,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = Object.prototype.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
@@ -1010,7 +1010,7 @@
 
   Stations = require('../collections/stations');
 
-  CheckIngs = require('../collections/checkIns');
+  CheckIns = require('../collections/checkIns');
 
   Icons = require('../lib/icons');
 
